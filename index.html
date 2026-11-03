@@ -53,7 +53,7 @@ let tier=isMobile?1:2;
 const TIERS=[{pr:1,shadow:false,steam:8},{pr:Math.min(devicePixelRatio,1.75),shadow:true,map:1024,steam:14},{pr:Math.min(devicePixelRatio,2),shadow:true,map:2048,steam:24}];
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
 renderer.outputColorSpace=THREE.SRGBColorSpace;
-renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=0.95;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 document.getElementById('wrap').prepend(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x120c08);scene.fog=new THREE.Fog(0x120c08,1.2,4.5);
@@ -74,8 +74,8 @@ function normalFrom(c,strength=2){const w=c.width,h=c.height,src=c.getContext('2
 function noiseCanvas(w,h,n,rmin,rmax,base='#808080',seedCol=()=>`rgba(255,255,255,${R(.05,.25)})`){return mkCanvas(w,h,(g)=>{g.fillStyle=base;g.fillRect(0,0,w,h);for(let i=0;i<n;i++){g.fillStyle=seedCol();g.beginPath();g.arc(R(0,w),R(0,h),R(rmin,rmax),0,7);g.fill();}});}
 
 // ---------- lights: food-commercial setup (warm key back-left, soft fill, rim) ----------
-scene.add(new THREE.HemisphereLight(0xffe7c4,0x1a0f08,0.35));
-const key=new THREE.DirectionalLight(0xfff0dc,2.6);key.position.set(-0.6,1.2,-0.5);key.castShadow=true;
+scene.add(new THREE.HemisphereLight(0xffdcae,0x24140a,0.42));
+const key=new THREE.DirectionalLight(0xffe0b4,2.6);key.position.set(-0.6,1.2,-0.5);key.castShadow=true;
 key.shadow.camera.left=-0.4;key.shadow.camera.right=0.4;key.shadow.camera.top=0.4;key.shadow.camera.bottom=-0.4;key.shadow.camera.near=0.2;key.shadow.camera.far=3;key.shadow.bias=-0.0003;key.shadow.normalBias=0.002;key.shadow.radius=6;
 scene.add(key);
 const fill=new THREE.PointLight(0xffc890,0.9,3,1.5);fill.position.set(0.5,0.45,0.6);scene.add(fill);
@@ -83,7 +83,7 @@ const rimL=new THREE.SpotLight(0xffd8a8,6,3,0.6,0.8,1.5);rimL.position.set(0.4,0
 const lamp=new THREE.PointLight(0xffa860,1.2,4);lamp.position.set(0,1.3,-1.2);scene.add(lamp);
 
 // ---------- counter ----------
-const woodC=mkCanvas(1024,1024,(g,w,h)=>{g.fillStyle='#120d0a';g.fillRect(0,0,w,h);for(let i=0;i<420;i++){g.strokeStyle=`rgba(${28+R(0,26)|0},${20+R(0,16)|0},${15+R(0,10)|0},${R(.1,.45)})`;g.lineWidth=R(.5,3);g.beginPath();let y=R(0,h);g.moveTo(0,y);for(let x=0;x<=w;x+=24){y+=R(-2,2);g.lineTo(x,y+Math.sin(x*.008+i)*5);}g.stroke();}
+const woodC=mkCanvas(1024,1024,(g,w,h)=>{g.fillStyle='#24170e';g.fillRect(0,0,w,h);for(let i=0;i<160;i++){g.strokeStyle=`rgba(${40+R(0,18)|0},${26+R(0,12)|0},${16+R(0,8)|0},${R(.08,.22)})`;g.lineWidth=R(2,7);g.beginPath();let y=R(0,h);g.moveTo(0,y);for(let x=0;x<=w;x+=24){y+=R(-2,2);g.lineTo(x,y+Math.sin(x*.008+i)*5);}g.stroke();}
  for(let i=0;i<30;i++){g.fillStyle=`rgba(255,235,210,${R(.01,.03)})`;g.fillRect(R(0,w),R(0,h),R(40,200),R(1,2));}});
 const woodTex=tex(woodC,{rep:[2,1]});
 const woodRough=tex(mkCanvas(512,512,(g,w,h)=>{g.fillStyle='#909090';g.fillRect(0,0,w,h);for(let i=0;i<300;i++){g.strokeStyle=`rgba(${R(80,200)|0},${R(80,200)|0},${R(80,200)|0},.3)`;g.beginPath();const y=R(0,h);g.moveTo(0,y);g.lineTo(w,y+R(-6,6));g.stroke();}}),{srgb:false,rep:[2,1]});
@@ -120,7 +120,7 @@ const innerR=y=>BOT+(BR-BOT)*Math.pow(Math.max(0,y)/BH,0.75);
 const pts=[new THREE.Vector2(0,-0.012),new THREE.Vector2(0.048,-0.012),new THREE.Vector2(0.05,-0.002),new THREE.Vector2(0.056,0.002)];
 for(let i=0;i<=24;i++){const t=i/24,y=t*BH;pts.push(new THREE.Vector2(innerR(y)+0.007+0.005*(1-t)+Math.sin(t*3.1)*0.003,y));}
 pts.push(new THREE.Vector2(BR+0.009,BH+0.006));pts.push(new THREE.Vector2(BR+0.004,BH+0.009));pts.push(new THREE.Vector2(BR-0.001,BH+0.006));
-const glazeC=mkCanvas(1024,512,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#2a1208');gr.addColorStop(.5,'#4a1f0e');gr.addColorStop(.9,'#5d2a14');gr.addColorStop(1,'#43190a');g.fillStyle=gr;g.fillRect(0,0,w,h);
+const glazeC=mkCanvas(1024,512,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#3a1208');gr.addColorStop(.5,'#5e200e');gr.addColorStop(.9,'#702c14');gr.addColorStop(1,'#521a0a');g.fillStyle=gr;g.fillRect(0,0,w,h);
  for(let i=0;i<4000;i++){g.fillStyle=`rgba(${R(10,110)|0},${R(5,45)|0},${R(0,15)|0},${R(.05,.25)})`;g.fillRect(R(0,w),R(0,h),R(1,4),R(1,4));}
  for(let i=0;i<120;i++){g.strokeStyle=`rgba(120,55,25,${R(.05,.2)})`;g.lineWidth=R(1,5);const x=R(0,w);g.beginPath();g.moveTo(x,h*.55);g.lineTo(x+R(-6,6),h);g.stroke();}});
 const glazeN=normalFrom(noiseCanvas(512,256,3000,.5,2.5),1.2);
@@ -130,7 +130,7 @@ const bowlOuter=new THREE.Mesh(new THREE.LatheGeometry(pts,128),glaze);bowlOuter
 const ipts=[new THREE.Vector2(0.0001,0.0001)];for(let i=0;i<=48;i++){const y=BH*i/48+0.0001;ipts.push(new THREE.Vector2(innerR(y),y));}
 const N_SEC=12;
 const suriC=mkCanvas(2048,1024,(g,w,h)=>{ // v: 0 bottom -> 1 rim (lathe v follows points)
- const gr=g.createLinearGradient(0,h,0,0);gr.addColorStop(0,'#3a170a');gr.addColorStop(.7,'#4c200e');gr.addColorStop(.86,'#5a2a14');gr.addColorStop(.88,'#a7794e');gr.addColorStop(.97,'#b48558');gr.addColorStop(1,'#3e1a0b');
+ const gr=g.createLinearGradient(0,h,0,0);gr.addColorStop(0,'#4a180a');gr.addColorStop(.7,'#62230e');gr.addColorStop(.86,'#6e2c14');gr.addColorStop(.88,'#a7794e');gr.addColorStop(.97,'#b48558');gr.addColorStop(1,'#3e1a0b');
  g.fillStyle=gr;g.fillRect(0,0,w,h);
  const sw=w/N_SEC;for(let s=0;s<N_SEC;s++){for(let k=0;k<12;k++){const x0=s*sw+k*(sw/12);g.strokeStyle='rgba(20,6,2,.6)';g.lineWidth=3;g.beginPath();g.moveTo(x0,h*.92);g.lineTo(x0+sw*.1,h*.1);g.stroke();g.strokeStyle='rgba(200,130,80,.22)';g.lineWidth=1.5;g.beginPath();g.moveTo(x0+3,h*.92);g.lineTo(x0+3+sw*.1,h*.1);g.stroke();}}
  for(let i=0;i<3000;i++){g.fillStyle=`rgba(${R(30,150)|0},${R(15,80)|0},${R(5,40)|0},${R(.05,.2)})`;g.fillRect(R(0,w),R(h*.05,h*.98),R(1,4),R(1,4));}});
@@ -146,8 +146,8 @@ const ao=new THREE.Mesh(new THREE.PlaneGeometry(0.26,0.26),new THREE.MeshBasicMa
 
 // ---------- soup: creamy miso, fine foam & oil, glossy ----------
 const SOUP_FULL=BH*0.84;let soupLevel=1;
-const soupC=mkCanvas(1024,1024,(g,w,h)=>{g.fillStyle='#c79f58';g.fillRect(0,0,w,h);
- for(let i=0;i<220;i++){const gr=g.createRadialGradient(0,0,0,0,0,1);const x=R(0,w),y=R(0,h),r=R(30,140);g.fillStyle=`rgba(${R(170,230)|0},${R(140,190)|0},${R(70,110)|0},${R(.05,.18)})`;g.beginPath();g.arc(x,y,r,0,7);g.fill();}
+const soupC=mkCanvas(1024,1024,(g,w,h)=>{g.fillStyle='#d6ad62';g.fillRect(0,0,w,h);
+ for(let i=0;i<220;i++){const gr=g.createRadialGradient(0,0,0,0,0,1);const x=R(0,w),y=R(0,h),r=R(30,140);g.fillStyle=`rgba(${R(185,235)|0},${R(140,185)|0},${R(60,95)|0},${R(.08,.24)})`;g.beginPath();g.arc(x,y,r,0,7);g.fill();}
  for(let i=0;i<16000;i++){g.fillStyle=`rgba(${R(225,245)|0},${R(195,220)|0},${R(130,170)|0},${R(.12,.4)})`;g.beginPath();g.arc(R(0,w),R(0,h),R(.5,1.8),0,7);g.fill();} // fine foam
  for(let i=0;i<1400;i++){g.fillStyle=`rgba(255,250,235,${R(.5,.9)})`;g.beginPath();g.arc(R(0,w),R(0,h),R(.8,2.4),0,7);g.fill();} // raw garlic grains
  for(let i=0;i<900;i++){const x=R(0,w),y=R(0,h),r=R(1.5,6);g.fillStyle=`rgba(230,170,60,${R(.25,.5)})`;g.beginPath();g.arc(x,y,r,0,7);g.fill();g.strokeStyle='rgba(255,240,200,.5)';g.lineWidth=.8;g.stroke();} // oil droplets
@@ -179,7 +179,7 @@ for(let p=0;p<5;p++){const geos=[];
 addItem('men','麺',noodleGroups,'hashi',5);
 
 // bean sprouts: neat mound, curved translucent stems w/ yellow heads, 3 layers
-const sproutMat=new THREE.MeshPhysicalMaterial({color:0xf7eed2,roughness:.3,transmission:.15,thickness:.004,clearcoat:.6,sheen:.3});
+const sproutMat=new THREE.MeshPhysicalMaterial({color:0xfdf8ea,roughness:.25,transmission:.3,emissive:0x2a2418,thickness:.004,clearcoat:.6,sheen:.3});
 const sproutHeadMat=new THREE.MeshPhysicalMaterial({color:0xe6d27a,roughness:.4,clearcoat:.4});
 const moyashiG=new THREE.Group();moyashiG.position.set(-0.008,0,-0.012);toppingsRoot.add(moyashiG);
 const sproutLayers=[];
@@ -226,9 +226,9 @@ addItem('menma','メンマ',menmas,'hashi',4);
 
 // chashu: rolled belly, cold, pale pink with spiral fat, roasted edge
 function chashuTexture(seed){return mkCanvas(512,512,(g,w,h)=>{const cx=w/2+R(-10,10),cy=h/2+R(-10,10);
- g.fillStyle='#8a5a36';g.beginPath();g.ellipse(w/2,h/2,w*.5,h*.48,0,0,7);g.fill();
+ g.fillStyle='#7a4526';g.beginPath();g.ellipse(w/2,h/2,w*.5,h*.48,0,0,7);g.fill();
  g.fillStyle='#efe3d8';g.beginPath();g.ellipse(w/2,h/2,w*.47,h*.45,0,0,7);g.fill(); // outer fat
- g.fillStyle='#c39892';g.beginPath();g.ellipse(w/2,h/2,w*.41,h*.39,0,0,7);g.fill(); // meat
+ g.fillStyle='#c4a39a';g.beginPath();g.ellipse(w/2,h/2,w*.41,h*.39,0,0,7);g.fill(); // meat
  // spiral of fat
  g.lineCap='round';for(let pass=0;pass<2;pass++){g.strokeStyle=pass?'rgba(245,232,222,.55)':'rgba(235,215,205,.3)';g.lineWidth=pass?5:14;g.beginPath();
   for(let t=0;t<3.4*Math.PI*2;t+=0.05){const r=6+t*9.2;const x=cx+Math.cos(t+seed)*r*1.05,y=cy+Math.sin(t+seed)*r*.95;if(r>w*.4)break;t<0.06?g.moveTo(x,y):g.lineTo(x,y);}g.stroke();}
@@ -236,9 +236,9 @@ function chashuTexture(seed){return mkCanvas(512,512,(g,w,h)=>{const cx=w/2+R(-1
  for(let i=0;i<1600;i++){const a=R(0,6.28),r=R(0,w*.4);const x=w/2+Math.cos(a)*r,y=h/2+Math.sin(a)*r*.95;g.strokeStyle=`rgba(${R(150,210)|0},${R(100,140)|0},${R(100,135)|0},${R(.08,.25)})`;g.lineWidth=R(.6,2);g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a+1.57)*R(3,10),y+Math.sin(a+1.57)*R(3,10));g.stroke();}
  for(let i=0;i<40;i++){g.fillStyle=`rgba(175,125,120,${R(.1,.25)})`;g.beginPath();g.arc(w/2+R(-150,150),h/2+R(-140,140),R(8,30),0,7);g.fill();}
  g.strokeStyle='rgba(110,65,35,.8)';g.lineWidth=8;g.beginPath();g.ellipse(w/2,h/2,w*.49,h*.47,0,0,7);g.stroke();});}
-const chashuEdge=new THREE.MeshPhysicalMaterial({color:0x8e5a34,roughness:.6,normalMap:glazeN,normalScale:new THREE.Vector2(1,1)});
+const chashuEdge=new THREE.MeshPhysicalMaterial({color:0x7a4626,roughness:.6,normalMap:glazeN,normalScale:new THREE.Vector2(1,1)});
 const chashus=[];
-[[-0.028,0.045,0.18,0.3],[0.018,0.052,-0.12,-0.2],[0.052,0.008,0.1,-0.6]].forEach(([x,z,tilt,ry],i)=>{
+[[-0.042,0.05,0.18,0.3],[0.004,0.06,-0.12,-0.2],[0.02,0.02,0.1,-0.6]].forEach(([x,z,tilt,ry],i)=>{
  const shp=new THREE.Shape();const rx=0.043,rz=0.036;for(let k=0;k<=48;k++){const a=k/48*Math.PI*2;const wob=1+Math.sin(a*3+i)*0.04+Math.sin(a*5)*0.02;const px=Math.cos(a)*rx*wob,pz=Math.sin(a)*rz*wob;k?shp.lineTo(px,pz):shp.moveTo(px,pz);}
  const g=new THREE.ExtrudeGeometry(shp,{depth:0.0055,bevelEnabled:true,bevelThickness:0.0012,bevelSize:0.0015,bevelSegments:3,curveSegments:48});
  const pa=g.attributes.position,uv=g.attributes.uv;for(let k=0;k<pa.count;k++)uv.setXY(k,pa.getX(k)/(2*rx*1.06)+.5,pa.getY(k)/(2*rz*1.06)+.5);
@@ -263,7 +263,7 @@ const hashiMat=new THREE.MeshStandardMaterial({color:0xe9d4a8,roughness:.8});
 const hashi=new THREE.Group();[-0.006,0.006].forEach(x=>{const g=new THREE.CylinderGeometry(0.0022,0.0035,0.21,8);g.rotateX(Math.PI/2);g.translate(0,0,-0.105);const s=new THREE.Mesh(g,hashiMat);s.position.x=x;s.castShadow=true;hashi.add(s);});
 scene.add(hashi);
 const restHashi=()=>{hashi.position.set(0.21,0.006,0.07);hashi.rotation.set(0,-0.15,0);hashi.children[0].position.x=-0.006;hashi.children[1].position.x=0.006;};
-const restRenge=()=>{renge.position.set(0.085,soupY()+0.012,-0.03);renge.rotation.set(-0.2,-0.7,0.12);};
+const restRenge=()=>{renge.position.set(bowl.position.x+0.094,bowl.position.y+soupY()+0.012,bowl.position.z-0.014);renge.rotation.set(0,1.9,0);};
 
 // ---------- steam (soft sprites, from soup & noodles only — chashu is cold) ----------
 const steamTex=ctex(128,128,(g,w,h)=>{const gr=g.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,255,255,.55)');gr.addColorStop(.5,'rgba(255,255,255,.18)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,w,h);});
@@ -368,14 +368,14 @@ async function pick(it,idx){
  const hp=hashi.position.clone();await anim(380,k=>{hashi.position.lerpVectors(hp,h0,ease(k));});restHashi();}
 async function sipSoup(it,idx){
  const pool=renge.userData.pool;const r0=renge.position.clone();
- const sc=new THREE.Vector3(bowl.position.x+R(-.02,.02),bowl.position.y+soupY()-0.002,bowl.position.z+0.035);
- await anim(450,k=>{renge.position.lerpVectors(r0,sc,ease(k));renge.rotation.set(-0.05,0,0);});clink(2600,.22);
+ const sc=new THREE.Vector3(bowl.position.x+0.09+R(-.006,.006),bowl.position.y+soupY()-0.002,bowl.position.z-0.014);
+ await anim(450,k=>{renge.position.lerpVectors(r0,sc,ease(k));renge.rotation.set(0,1.9,0);});clink(2600,.22);
  ripple(sc.x,sc.z,3);pool.visible=true;const before=soupLevel,after=Math.max(0,1-(idx+1)/it.portions);const mp=mouthPos();
  setTimeout(()=>slurp(.7,.6),600);
- await anim(1000,k=>{renge.position.lerpVectors(sc,mp,ease(k));renge.position.y+=Math.sin(k*Math.PI)*.05;renge.rotation.set(-0.05-0.5*Math.max(0,k-.7)/.3,0,0);soupLevel=before+(after-before)*Math.min(1,k*2);updateSoup();});
+ await anim(1000,k=>{renge.position.lerpVectors(sc,mp,ease(k));renge.position.y+=Math.sin(k*Math.PI)*.05;renge.rotation.set(-0.05-0.5*Math.max(0,k-.7)/.3,1.9*(1-ease(Math.min(1,k*1.6))),0);soupLevel=before+(after-before)*Math.min(1,k*2);updateSoup();});
  pool.visible=false;if(ambNodes.steam)ambNodes.steam.gain.value=0.02*soupLevel;
  const rp=renge.position.clone();restRenge();const rt=renge.position.clone();renge.position.copy(rp);
- await anim(420,k=>renge.position.lerpVectors(rp,rt,ease(k)));restRenge();
+ await anim(420,k=>{renge.position.lerpVectors(rp,rt,ease(k));renge.rotation.set(-0.55*(1-ease(k)),1.9*ease(k),0);});restRenge();
  if(soupLevel<=0){renge.position.set(0.21,0.012,0.0);renge.rotation.set(0,-0.9,0);}clink(1800,.12);}
 function bestFlash(){const f=document.createElement('div');f.style.cssText='position:fixed;inset:0;background:radial-gradient(circle,rgba(255,230,150,.35),rgba(255,200,80,0) 70%);pointer-events:none;z-index:3;transition:opacity 1.6s';document.body.appendChild(f);setTimeout(()=>f.style.opacity=0,300);setTimeout(()=>f.remove(),2200);
  if(AC){const t=AC.currentTime;[523,659,784,1047].forEach((fq,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=fq;g.gain.setValueAtTime(0,t+i*.09);g.gain.linearRampToValueAtTime(.06,t+i*.09+.05);g.gain.exponentialRampToValueAtTime(.0001,t+i*.09+1.2);o.connect(g).connect(master);o.start(t+i*.09);o.stop(t+i*.09+1.3);});}}
@@ -419,5 +419,5 @@ function loop(){requestAnimationFrame(loop);const now=performance.now(),dt=Math.
 function resize(){const w=innerWidth,h=innerHeight,portrait=h>w;camera.aspect=w/h;camera.fov=portrait?Math.min(72,50*(h/w)*0.62+20):48;camera.updateProjectionMatrix();renderer.setSize(w,h);}
 addEventListener('resize',resize);addEventListener('orientationchange',()=>setTimeout(resize,200));
 applyTier();updateSoup();restHashi();restRenge();loop();
-window.__game={get state(){return state},get busy(){return busy},items,eat,get soupLevel(){return soupLevel},get order(){return order},get tier(){return tier},tap,camera};
+window.__game={get state(){return state},get busy(){return busy},items,eat,get soupLevel(){return soupLevel},get order(){return order},get tier(){return tier},tap,camera,renge,toppingsRoot,THREE,restRenge};
 </script></body></html>
