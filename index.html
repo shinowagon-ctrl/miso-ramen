@@ -19,7 +19,7 @@ canvas{display:block;touch-action:none}
 #menu{display:flex;gap:10px;flex-direction:row-reverse;margin:16px}
 .tan{writing-mode:vertical-rl;background:#f3e6c4;color:#2a160a;padding:16px 10px;font-size:22px;border:1px solid #a88;min-height:170px;box-shadow:2px 3px 6px rgba(0,0,0,.5);cursor:pointer;font-weight:bold}
 .tan.off{opacity:.5;cursor:default}
-.tan small{font-size:14px;margin-top:8px}
+.tan small{font-size:16px;margin-top:10px}.tcy{text-combine-upright:all;-webkit-text-combine:horizontal}
 #msg{position:fixed;left:50%;top:calc(13% + env(safe-area-inset-top));transform:translateX(-50%);font-size:clamp(18px,4.6vw,28px);text-shadow:0 2px 8px #000,0 0 3px #000;opacity:0;transition:opacity .6s;pointer-events:none;white-space:nowrap;z-index:5}
 #msg.best{color:#ffe07a;font-size:clamp(22px,6vw,36px)}
 #bar{position:fixed;left:0;right:0;bottom:0;padding:10px calc(8px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left));display:none;gap:8px;justify-content:center;flex-wrap:wrap;background:linear-gradient(transparent,rgba(0,0,0,.65));z-index:4}
@@ -41,7 +41,7 @@ canvas{display:block;touch-action:none}
 <div class="ov" id="ovEnter"><h1>あの一杯</h1><p>のれんをくぐると、味噌の香り。<br>カウンター席が空いている。</p><button class="btn" id="enterBtn">のれんをくぐる</button></div>
 <div class="ov hide" id="ovNin" style="background:linear-gradient(rgba(18,10,4,0) 45%,rgba(18,10,4,.7));justify-content:flex-end;padding-bottom:12vh"><p style="font-size:24px">「いらっしゃい、何人？」</p><button class="btn" id="ninBtn">１人</button></div>
 <div class="ov hide" id="ovMenu"><p>「何にします？」</p>
-<div id="menu"><div class="tan" data-m="miso">味噌ラーメン<small>おすすめ</small></div><div class="tan" data-m="chashu">味噌チャーシュー<small>冷たいチャーシュー８枚</small></div></div>
+<div id="menu"><div class="tan" data-m="miso">味噌ラーメン<small><span class="tcy">700</span>円</small></div><div class="tan" data-m="chashu">味噌チャーシュー<small><span class="tcy">1100</span>円</small></div></div>
 <p style="font-size:13px">短冊をえらんでください</p></div>
 <div class="ov hide" id="ovEnd"><h1>ごちそうさまでした</h1><p>今日の食べ順</p><div id="order"></div><button class="btn" id="againBtn">もう一杯</button></div>
 <script type="module">
@@ -52,7 +52,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 const isMobile=/iPhone|iPad|Android/i.test(navigator.userAgent)||matchMedia('(pointer:coarse)').matches;
 // quality tiers: 2 high, 1 mid, 0 low
 let tier=isMobile?1:2;
-const TIERS=[{pr:1,shadow:false,steam:8},{pr:Math.min(devicePixelRatio,1.75),shadow:true,map:1024,steam:14},{pr:Math.min(devicePixelRatio,2),shadow:true,map:2048,steam:24}];
+const TIERS=[{pr:1,shadow:false,steam:11},{pr:Math.min(devicePixelRatio,1.75),shadow:true,map:1024,steam:18},{pr:Math.min(devicePixelRatio,2),shadow:true,map:2048,steam:30}];
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
@@ -107,14 +107,9 @@ const front=new THREE.Mesh(new THREE.BoxGeometry(3.2,0.3,0.06),new THREE.MeshSta
 
 // glass, bottles, sleeve
 const glass=new THREE.Mesh(new THREE.CylinderGeometry(0.034,0.029,0.10,40,1,true),new THREE.MeshPhysicalMaterial({color:0xffffff,transmission:1,roughness:0.03,thickness:0.004,ior:1.5,side:2,transparent:true}));
-glass.position.set(0.17,0.05,-0.27);scene.add(glass);
-const water=new THREE.Mesh(new THREE.CylinderGeometry(0.031,0.028,0.07,40),new THREE.MeshPhysicalMaterial({color:0xeaf4ff,transmission:1,roughness:0.02,ior:1.33,thickness:.05,transparent:true}));water.position.set(0.17,0.036,-0.27);scene.add(water);
-const labelTex=ctex(256,128,(g,w,h)=>{g.fillStyle='#eee';g.fillRect(0,0,w,h);g.fillStyle='#b3201a';g.fillRect(0,0,w,26);g.fillRect(0,h-20,w,20);g.fillStyle='#222';g.font='bold 40px serif';g.fillText('醤油',80,85);});
-[[-0.30,-0.40],[-0.23,-0.43],[-0.16,-0.44]].forEach(([x,z],i)=>{const b=new THREE.Group();
- const body=new THREE.Mesh(new THREE.CylinderGeometry(0.028,0.03,0.11,32),new THREE.MeshPhysicalMaterial({color:0x1a0a06,roughness:.08,transmission:.35,thickness:.03,clearcoat:1}));body.position.y=.055;
- const lab=new THREE.Mesh(new THREE.CylinderGeometry(0.0305,0.0305,0.045,32,1,true),new THREE.MeshStandardMaterial({map:labelTex}));lab.position.y=.05;
- const cap=new THREE.Mesh(new THREE.CylinderGeometry(0.016,0.022,0.03,24),new THREE.MeshStandardMaterial({color:i==1?0xc0281e:0x222222,roughness:.4}));cap.position.y=.125;
- b.add(body,lab,cap);b.position.set(x,0,z);b.traverse(o=>o.castShadow=true);scene.add(b);});
+const cupG=new THREE.Group();cupG.position.set(0.17,0,-0.27);scene.add(cupG);glass.position.set(0,0.05,0);cupG.add(glass);let waterLv=1;
+const water=new THREE.Mesh(new THREE.CylinderGeometry(0.031,0.028,0.07,40),new THREE.MeshPhysicalMaterial({color:0xeaf4ff,transmission:1,roughness:0.02,ior:1.33,thickness:.05,transparent:true}));water.position.set(0,0.036,0);cupG.add(water);water.castShadow=false;
+function setWater(){water.visible=waterLv>0.01;water.scale.y=Math.max(0.01,waterLv);water.position.y=0.001+0.035*waterLv;}
 const sleeveTex=ctex(512,96,(g,w,h)=>{g.fillStyle='#f6f2ea';g.fillRect(0,0,w,h);g.fillStyle='#d4361f';g.fillRect(0,0,w*.62,h);g.fillStyle='#fff';g.font='bold 40px sans-serif';g.fillText('ラーメン',40,62);g.fillStyle='#c22';g.font='bold 46px serif';g.fillText('め ん',w*.68,64);});
 const sleeve=new THREE.Mesh(new THREE.BoxGeometry(0.21,0.002,0.035),new THREE.MeshStandardMaterial({map:sleeveTex,roughness:.8}));sleeve.position.set(0.24,0.001,0.10);sleeve.rotation.y=0.3;scene.add(sleeve);
 
@@ -169,10 +164,12 @@ const soup=new THREE.Mesh(new THREE.CircleGeometry(1,128),soupMat);soup.rotation
  const drops=new THREE.InstancedMesh(dg,dm,N);const M=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3(),p=new THREE.Vector3();
  for(let i=0;i<N;i++){const a=R(0,6.28),u=Math.sqrt(R(0,1))*0.94;const s=(Math.random()<.15?R(.0018,.0035):R(.0005,.0014))/0.115;p.set(Math.cos(a)*u,Math.sin(a)*u,0.0006);sc.set(s,s*R(.8,1),1);M.compose(p,q,sc);drops.setMatrixAt(i,M);}
  drops.renderOrder=2;soup.add(drops);}
+// how far the toppings may sink as the soup goes down: the noodle mass is wedged against the bowl wall, so nothing drops below where it fits inside
+function minTy(){if(typeof items==='undefined')return -0.002;if(items.men&&items.men.left>0)return -0.002;if(items.wakame&&items.wakame.left>0)return -0.01;return -0.058;}
 function soupY(){return 0.002+SOUP_FULL*soupLevel;}
 const toppingsRoot=new THREE.Group();bowl.add(toppingsRoot);
 function updateSoup(){const y=soupY();soup.position.y=y;const r=innerR(y)-0.0004;soup.scale.set(r,r,1);soup.visible=soupLevel>0.001;
- toppingsRoot.position.y=Math.max(y-SOUP_FULL,-SOUP_FULL+0.004);
+ toppingsRoot.position.y=Math.max(y-SOUP_FULL,minTy());
  if(Math.abs(toppingsRoot.position.y-_lastSY)>0.0001){_lastSY=toppingsRoot.position.y;try{settle();}catch(e){}}}
 let _lastSY=0;
 toppingsRoot.position.y=0;
@@ -183,20 +180,20 @@ function addItem(name,label,objs,tool,portions){items[name]={name,label,objs,too
 const S=SOUP_FULL; // toppings positioned relative to full soup level
 
 // noodles: curly mound, 5 portions merged per portion
-const noodleMat=new THREE.MeshPhysicalMaterial({color:0xe6cf9e,roughness:.38,clearcoat:.7,clearcoatRoughness:.2,sheen:.4,sheenColor:new THREE.Color(0xfff0b0),transmission:.08,thickness:.003});
+const noodleMat=new THREE.MeshPhysicalMaterial({color:0xecc35e,roughness:.46,clearcoat:.35,clearcoatRoughness:.35,sheen:.35,sheenColor:new THREE.Color(0xffe08a),transmission:.04,thickness:.003});
 const noodleGroups=[];
 for(let p=0;p<5;p++){const geos=[];
  for(let n=0;n<14;n++){const pts=[];const a0=R(0,6.28),turns=R(.5,1.1),r0=R(.02,.09);
   for(let i=0;i<70;i++){const t=i/69;const a=a0+t*turns*6.28;const r=Math.min(innerR(S)-0.01,r0+Math.sin(t*5+n)*0.02);
    const curl=0.0035;const dome=Math.max(0,0.006*(1-r/0.06));
-   pts.push(new THREE.Vector3(Math.cos(a)*r+Math.cos(t*90+n)*curl,S-0.0068+dome*(1-p*0.12)+Math.sin(t*95+n*2)*0.0028,Math.sin(a)*r+Math.sin(t*90+n)*curl));}
-  geos.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),180,0.0019,5));}
+   const yy=S-0.0068+dome*(1-p*0.12)+Math.sin(t*95+n*2)*0.0028;const rr=Math.min(r,innerR(yy-0.003)-0.0095);pts.push(new THREE.Vector3(Math.cos(a)*rr+Math.cos(t*90+n)*curl,yy,Math.sin(a)*rr+Math.sin(t*90+n)*curl));}
+  geos.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),180,0.0021,6));}
  const m=new THREE.Mesh(mergeGeometries(geos),noodleMat);toppingsRoot.add(m);noodleGroups.push(m);}
 addItem('men','麺',noodleGroups,'hashi',5);
 
 // bean sprouts: cooked, limp, slightly translucent, tangled heap with miso sheen; split into 5 bunches (Voronoi) so a taken bunch leaves a visible gap
-const sproutMat=new THREE.MeshPhysicalMaterial({color:0xe9dcbd,roughness:.22,transmission:.38,thickness:.0025,emissive:0x1a130a,clearcoat:.9,clearcoatRoughness:.15,sheen:.4,sheenColor:new THREE.Color(0xffe2a8),transparent:true,opacity:.93});
-const sproutHeadMat=new THREE.MeshPhysicalMaterial({color:0xd9c98e,roughness:.4,clearcoat:.5,transmission:.12,thickness:.0015});
+const sproutMat=new THREE.MeshPhysicalMaterial({color:0xf3eddc,roughness:.3,transmission:.42,thickness:.002,emissive:0x15120a,clearcoat:.6,clearcoatRoughness:.25,sheen:.3,sheenColor:new THREE.Color(0xfff4d8),transparent:true,opacity:.9});
+const sproutHeadMat=new THREE.MeshPhysicalMaterial({color:0xe2cf72,roughness:.45,clearcoat:.4,transmission:.1,thickness:.0015});
 const moyashiG=new THREE.Group();moyashiG.position.set(-0.008,0,-0.012);toppingsRoot.add(moyashiG);
 const MOY_R=0.043,MOY_H=0.02;const moundY=r=>S+0.002+MOY_H*Math.max(0,1-(r/MOY_R)**2);
 const MOY_C=[[0.012,0.018],[-0.016,0.012],[-0.012,-0.016],[0.016,-0.014],[0,0]];
@@ -206,45 +203,48 @@ for(let i=0;i<85;i++){const a=R(0,6.28),r=Math.pow(R(0,1),.7)*0.036;const c=new 
  for(let j=0;j<6;j++){const u=j/5-0.5,ang=dir+curl*u*2.2;const p=c.clone().add(new THREE.Vector3(Math.cos(ang)*u*len,0,Math.sin(ang)*u*len));const rr=Math.hypot(p.x,p.z);if(rr>MOY_R*0.95){p.x*=MOY_R*0.95/rr;p.z*=MOY_R*0.95/rr;}
   p.y=S+0.002+(moundY(Math.hypot(p.x,p.z))-S-0.002)*lay+R(-.0015,.0025);pts.push(p);}
  let bi=0,bd=9;MOY_C.forEach(([x,z],k)=>{const d=Math.hypot(c.x-x,c.z-z)*(k===4?1.25:1);if(d<bd){bd=d;bi=k;}});
- bunches[bi].push({pts,r:R(.0011,.0014),head:Math.random()<.14,tail:Math.random()<.5});}
-function sproutGeo(pts,r,head){const cv=new THREE.CatmullRomCurve3(pts);const out=[new THREE.TubeGeometry(cv,14,r,5)];let h=null;
- if(head){const tn=cv.getTangent(1).normalize();h=new THREE.SphereGeometry(0.00155,8,6);h.scale(1,1,1.45);h.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1),tn));const hp=cv.getPoint(1).addScaledVector(tn,0.0009);h.translate(hp.x,hp.y,hp.z);}
+ bunches[bi].push({pts,r:R(.0010,.0013),head:Math.random()<.5,tail:Math.random()<.6});}
+function sproutGeo(pts,r,head,tail){const cv=new THREE.CatmullRomCurve3(pts);const out=[new THREE.TubeGeometry(cv,14,r,5).toNonIndexed()];let h=null;
+ if(tail){const t0=cv.getTangent(0).normalize().negate(),p0=cv.getPoint(0);const side=new THREE.Vector3(-t0.z,0,t0.x).normalize();const tp=[p0.clone()];for(let q=1;q<=4;q++){tp.push(p0.clone().addScaledVector(t0,0.003*q).addScaledVector(side,0.0012*q*q*0.25).add(new THREE.Vector3(0,-0.0003*q,0)));}
+  const tg=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(tp),6,r*0.3,4);out[0]=mergeGeometries([out[0],tg.toNonIndexed()]);}
+ if(head){const tn=cv.getTangent(1).normalize();h=new THREE.SphereGeometry(0.0017,8,6);h.scale(1,1,1.55);h.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1),tn));const hp=cv.getPoint(1).addScaledVector(tn,0.0009);h.translate(hp.x,hp.y,hp.z);}
  return [out[0],h];}
-bunches.forEach((B,k)=>{const st=[],hd=[];B.forEach(s=>{const [t,h]=sproutGeo(s.pts,s.r,s.head);st.push(t);if(h)hd.push(h);});
+bunches.forEach((B,k)=>{const st=[],hd=[];B.forEach(s=>{const [t,h]=sproutGeo(s.pts,s.r,s.head,s.tail);st.push(t);if(h)hd.push(h);});
  const lg=new THREE.Group();lg.add(new THREE.Mesh(mergeGeometries(st),sproutMat));if(hd.length)lg.add(new THREE.Mesh(mergeGeometries(hd),sproutHeadMat));lg.userData.sprouts=B;lg.userData.k=k;moyashiG.add(lg);sproutLayers.push(lg);});
 // eat front bunches first, centre bunch last
 sproutLayers.sort((a,b)=>[0,1,3,2,4].indexOf(a.userData.k)-[0,1,3,2,4].indexOf(b.userData.k));
 addItem('moyashi','もやし',sproutLayers,'hashi',5);
 
 // wakame: glossy dark ruffled sheets at the back
-const wakameMat=new THREE.MeshPhysicalMaterial({color:0x1f2a18,roughness:.3,clearcoat:.6,clearcoatRoughness:.2,side:2,transmission:.2,thickness:.002,sheen:.3,sheenColor:new THREE.Color(0x3c6a2a)});
+const wakameMat=new THREE.MeshPhysicalMaterial({color:0x1d2916,roughness:.72,clearcoat:.12,clearcoatRoughness:.7,side:2,transmission:.08,thickness:.002,sheen:.25,sheenRoughness:.8,sheenColor:new THREE.Color(0x35552a)});
+const wakameAll=new THREE.Group();toppingsRoot.add(wakameAll);
 const wakameParts=[];
 for(let part=0;part<2;part++){const grp=new THREE.Group();
- for(let k=0;k<5;k++){const g=new THREE.PlaneGeometry(R(.04,.06),R(.025,.04),18,12);const pa=g.attributes.position;
+ for(let k=0;k<5;k++){const g=new THREE.PlaneGeometry(R(.034,.048),R(.022,.032),18,12);const pa=g.attributes.position;
   for(let i=0;i<pa.count;i++){const x=pa.getX(i),y=pa.getY(i);pa.setZ(i,Math.sin(x*200+k)*0.0025+Math.cos(y*230+k)*0.002+Math.sin((x-y)*120)*0.0025);pa.setX(i,x+Math.sin(y*150)*0.002);}g.computeVertexNormals();
   const w=new THREE.Mesh(g,wakameMat);w.rotation.set(-Math.PI/2+R(-.25,.25),R(-.25,.25),R(0,6.28));w.position.set(R(-.03,.03)+(part?0.025:-0.02),S+0.002+k*0.0012,R(-.012,.012));grp.add(w);}
- grp.position.set(0,0,-0.072);toppingsRoot.add(grp);wakameParts.push(grp);}
-addItem('wakame','わかめ',wakameParts,'hashi',2);
+ grp.position.set(0,0,-0.06);wakameAll.add(grp);wakameParts.push(grp);}
+addItem('wakame','わかめ',[wakameAll],'hashi',1);
 
 // kanikama: two stick pieces ~1×4.5cm, red layer on top only, white fibrous flesh, frayed end
-const kaniTop=tex(mkCanvas(512,128,(g,w,h)=>{g.fillStyle='#b8321a';g.fillRect(0,0,w,h);for(let i=0;i<90;i++){g.strokeStyle=`rgba(${R(150,230)|0},${R(30,80)|0},${R(20,50)|0},${R(.2,.5)})`;g.lineWidth=R(.6,2);g.beginPath();const y=R(0,h);g.moveTo(0,y);g.lineTo(w,y+R(-3,3));g.stroke();}
+const kaniTop=tex(mkCanvas(512,128,(g,w,h)=>{g.fillStyle='#dc2416';g.fillRect(0,0,w,h);for(let i=0;i<90;i++){g.strokeStyle=`rgba(${R(205,250)|0},${R(20,55)|0},${R(15,35)|0},${R(.2,.5)})`;g.lineWidth=R(.6,2);g.beginPath();const y=R(0,h);g.moveTo(0,y);g.lineTo(w,y+R(-3,3));g.stroke();}
  for(let i=0;i<30;i++){g.strokeStyle=`rgba(255,235,220,${R(.08,.25)})`;g.lineWidth=R(.5,1.2);g.beginPath();const y=R(0,h);g.moveTo(0,y);g.lineTo(w,y+R(-2,2));g.stroke();}
- const e=g.createLinearGradient(0,0,0,h);e.addColorStop(0,'rgba(250,240,230,.85)');e.addColorStop(.12,'rgba(250,240,230,0)');e.addColorStop(.88,'rgba(250,240,230,0)');e.addColorStop(1,'rgba(250,240,230,.85)');g.fillStyle=e;g.fillRect(0,0,w,h);
+ const e=g.createLinearGradient(0,0,0,h);e.addColorStop(0,'rgba(250,240,230,.3)');e.addColorStop(.06,'rgba(250,240,230,0)');e.addColorStop(.94,'rgba(250,240,230,0)');e.addColorStop(1,'rgba(250,240,230,.3)');g.fillStyle=e;g.fillRect(0,0,w,h);
  const f=g.createLinearGradient(0,0,w,0);f.addColorStop(0,'rgba(250,240,230,0)');f.addColorStop(.86,'rgba(250,240,230,0)');f.addColorStop(1,'rgba(250,240,230,.7)');g.fillStyle=f;g.fillRect(0,0,w,h);}));
 const kaniWhite=tex(mkCanvas(512,128,(g,w,h)=>{g.fillStyle='#f6eee4';g.fillRect(0,0,w,h);for(let i=0;i<160;i++){g.strokeStyle=`rgba(${R(200,240)|0},${R(185,220)|0},${R(170,205)|0},${R(.2,.6)})`;g.lineWidth=R(.5,1.6);g.beginPath();const y=R(0,h);g.moveTo(0,y);g.lineTo(w,y+R(-2,2));g.stroke();}
- const t=g.createLinearGradient(0,0,0,h);t.addColorStop(0,'rgba(200,70,40,.55)');t.addColorStop(.18,'rgba(200,70,40,0)');g.fillStyle=t;g.fillRect(0,0,w,h);}));
+ const t=g.createLinearGradient(0,0,0,h);t.addColorStop(0,'rgba(215,40,25,.95)');t.addColorStop(.3,'rgba(215,45,28,.85)');t.addColorStop(.42,'rgba(200,70,40,0)');g.fillStyle=t;g.fillRect(0,0,w,h);}));
 const kaniFib=normalFrom(mkCanvas(256,64,(g,w,h)=>{g.fillStyle='#888';g.fillRect(0,0,w,h);for(let i=0;i<70;i++){g.strokeStyle=`rgba(${R(0,255)|0},0,0,.6)`;g.beginPath();const y=R(0,h);g.moveTo(0,y);g.lineTo(w,y);g.stroke();}}),2);
 const kaniMatTop=new THREE.MeshPhysicalMaterial({map:kaniTop,normalMap:kaniFib,roughness:.42,clearcoat:.4,sheen:.3});
 const kaniMatW=new THREE.MeshPhysicalMaterial({map:kaniWhite,normalMap:kaniFib,roughness:.55,sheen:.4,sheenColor:new THREE.Color(0xffffff)});
-function kaniBar(seed){const L=0.045,g=new THREE.BoxGeometry(L,0.006,0.0095,36,2,4);const p=g.attributes.position;
+function kaniBar(seed){const L=0.066,g=new THREE.BoxGeometry(L,0.0042,0.0068,48,2,4);const p=g.attributes.position;
  for(let i=0;i<p.count;i++){let x=p.getX(i),y=p.getY(i),z=p.getZ(i);const f=Math.max(0,(x-(L/2-0.006))/0.006);
-  if(f>0){x+=Math.sin(z*900+y*700+seed)*0.0022*f-0.001*f*Math.abs(Math.sin(z*1500+seed));z*=1+0.18*f;y+=Math.sin(z*1300+seed)*0.0008*f;}
-  const rz=Math.abs(z)/0.00475,ry=Math.abs(y)/0.003;if(rz>0.7&&ry>0.6){y*=0.9;z*=0.96;}
-  y+=Math.sin(x*90+seed)*0.0004;p.setXYZ(i,x,y,z);}g.computeVertexNormals();
+  if(f>0){x+=Math.sin(z*1300+y*900+seed)*0.0018*f-0.001*f*Math.abs(Math.sin(z*1500+seed));z*=1+0.18*f;y+=Math.sin(z*1300+seed)*0.0008*f;}
+  const rz=Math.abs(z)/0.0034,ry=Math.abs(y)/0.0021;if(rz>0.7&&ry>0.6){y*=0.9;z*=0.96;}
+  y+=Math.sin(x*90+seed)*0.0005;z+=Math.sin(x*60+seed*2)*0.0006;p.setXYZ(i,x,y,z);}g.computeVertexNormals();
  const m=new THREE.Mesh(g,[kaniMatW,kaniMatW,kaniMatTop,kaniMatW,kaniMatW,kaniMatW]);m.name='kani'+seed;return m;}
 const kani=new THREE.Group();const kaniBars=[kaniBar(0),kaniBar(1)];
 kaniBars[0].position.set(0,S+0.004,0);kaniBars[0].rotation.set(0,0,0.04);kaniBars[1].position.set(-0.004,S+0.0045,0.012);kaniBars[1].rotation.set(0.03,0.2,-0.03);kani.add(...kaniBars);
-kani.position.set(0.072,0,0.03);kani.rotation.set(0,-0.75,0);toppingsRoot.add(kani);addItem('kani','カニカマ',[kani],'hashi',1);
+kani.position.set(0.072,0,0.03);kani.rotation.set(0,-0.75,0);toppingsRoot.add(kani);addItem('kani','カニカマ',kaniBars,'hashi',2);
 
 // menma: 2x8cm x 7mm planks with fibers
 const menmaC=mkCanvas(512,128,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#b88a5e');gr.addColorStop(.5,'#c99d71');gr.addColorStop(1,'#a87c52');g.fillStyle=gr;g.fillRect(0,0,w,h);
@@ -289,8 +289,8 @@ CH_HOME.forEach(([x,z,tilt,ry],i)=>{const g=mkSlice(0.03*R(.92,1.06),0.024*R(.92
 addItem('chashu','チャーシュー',chashus.slice(0,3),'hashi',3);
 let mode='miso';setTimeout(()=>setupChashu('miso'),0);
 function setupChashu(md){mode=md;menmas.forEach(m=>{if(!m.userData.home)m.userData.home=[m.position.clone(),m.rotation.clone()];m.position.copy(m.userData.home[0]);m.rotation.copy(m.userData.home[1]);});if(!kani.userData.home)kani.userData.home=[kani.position.clone(),kani.rotation.clone()];kani.position.copy(kani.userData.home[0]);kani.rotation.copy(kani.userData.home[1]);const it=items.chashu;chashus.forEach(m=>{m.visible=false;m.position.copy(m.userData.home[0]);m.rotation.copy(m.userData.home[1]);});
- menmas.forEach((m,i)=>{m.position.set(-0.07+i*0.003,S+0.005,-0.03+i*0.022);m.rotation.y=0.15;});kaniBars.forEach((b,i)=>{b.position.y=kaniBars[0].position.y;b.position.z=kaniBars[0].position.z+i*0.017;b.position.x=kaniBars[0].position.x+i*0.004;});kani.position.x=0.078;kani.position.z=0.036;
- if(md==='chashu'){menmas.forEach((m,i)=>{m.position.set(-0.075+i*0.017,m.position.y,-0.035-i*0.013);m.rotation.y=-0.93;});kani.position.set(0.045,kani.position.y,-0.088);kani.rotation.y=-0.52;
+ menmas.forEach((m,i)=>{m.position.set([-0.068,-0.072,-0.062][i],S+0.005,[-0.03,-0.014,0.004][i]);m.rotation.set([0.04,-0.06,0.05][i],[0.12,0.62,-0.28][i],[0.03,-0.05,0.02][i]);});kaniBars.forEach((b,i)=>{b.position.y=kaniBars[0].position.y;b.position.z=kaniBars[0].position.z+i*0.017;b.position.x=kaniBars[0].position.x+i*0.004;});kani.position.x=0.078;kani.position.z=0.036;
+ if(md==='chashu'){menmas.forEach((m,i)=>{m.position.set(-0.075+i*0.013,m.position.y,-0.035-i*0.011);m.rotation.y=-0.93+[0,0.42,-0.34][i];});kani.position.set(0.045,kani.position.y,-0.088);kani.rotation.y=-0.52;
   const angs=[30,52,74,96,119,141,163,186];const ring=angs.map((d,i)=>{const a=d*Math.PI/180,m=chashus[i];m.position.set(Math.cos(a)*0.083,S+0.004,Math.sin(a)*0.083);m.rotation.set(0.12,-(Math.PI/2+a),0.52,'YXZ');return m;});
   it.objs=ring.slice().reverse();}else it.objs=chashus.slice(0,3);
  it.portions=it.left=it.objs.length;it.objs.forEach(o=>o.traverse(c=>{c.userData.item='chashu';c.castShadow=true;c.receiveShadow=true;}));[...menmas,...chashus,...kaniBars].forEach(m=>{m.userData.baseY=m.position.y;m.userData.baseX=m.position.x;m.userData.baseZ=m.position.z;});settle();}
@@ -301,7 +301,7 @@ addItem('soup','スープ',[soup],'renge',10);
 function topMeshes(){return [...menmas,...chashus,...kaniBars].filter(m=>{let o=m;while(o&&o!==toppingsRoot){if(!o.visible)return false;o=o.parent;}return true;});}
 // soft toppings (sprout mound, wakame sheets) treated as solid support for the spoon (bowl-local)
 function softIn(p){const tr=toppingsRoot.position.y;const n=Math.ceil(sproutLayers.filter(l=>l.visible).length/sproutLayers.length*3);if(n){const dx=p.x+0.008,dz=p.z+0.012,r=Math.hypot(dx,dz);if(r<0.046&&p.y>S-0.01+tr&&p.y<S+0.006+n*0.0045+0.004*(1-r/0.046)+tr)return true;}
- for(const [k,c] of [[0,-0.02],[1,0.025]]){if(wakameParts[k].visible&&p.x>c-0.055&&p.x<c+0.055&&p.z>-0.104&&p.z<-0.04&&p.y<S+0.008+tr&&p.y>S-0.01+tr)return true;}return false;}
+ for(const [k,c] of [[0,-0.02],[1,0.025]]){if(wakameAll.visible&&wakameParts[k].visible&&p.x>c-0.055&&p.x<c+0.055&&p.z>-0.095&&p.z<-0.026&&p.y<S+0.008+tr&&p.y>S-0.01+tr)return true;}return false;}
 function shrunkBox(m){if(!m.userData.sbb){m.geometry.computeBoundingBox();m.userData.sbb=m.geometry.boundingBox.clone().expandByScalar(-0.0004);}return m.userData.sbb;}
 function insideLocal(m,p){const f=m.geometry.userData.inside;return f?f(p):shrunkBox(m).containsPoint(p);}
 const _ta=new THREE.Vector3(),_tm=new THREE.Matrix4();
@@ -348,14 +348,15 @@ const hashiMat=new THREE.MeshStandardMaterial({color:0xe9d4a8,roughness:.8});
 const hashi=new THREE.Group();[-0.006,0.006].forEach(x=>{const g=new THREE.CylinderGeometry(0.0035,0.0022,0.21,8);g.rotateX(Math.PI/2);g.translate(0,0,-0.105);const s=new THREE.Mesh(g,hashiMat);s.position.x=x;s.castShadow=true;hashi.add(s);});
 scene.add(hashi);
 const HPL=[];for(let i=0;i<=42;i++){const z=-0.21*i/42,r=0.0035-0.0013*i/42;for(let k=0;k<8;k++){const a=k/8*Math.PI*2;HPL.push(new THREE.Vector3(Math.cos(a)*r,Math.sin(a)*r,z));}}
-const hashioki=new THREE.Mesh(new THREE.CapsuleGeometry(0.0045,0.03,6,12).rotateZ(Math.PI/2).scale(1,0.8,1.1),new THREE.MeshPhysicalMaterial({color:0xf2efe8,roughness:.25,clearcoat:1}));hashioki.position.set(0.21,0.0037,-0.035);hashioki.rotation.y=Math.PI/2-0.15;hashioki.castShadow=hashioki.receiveShadow=true;scene.add(hashioki);
+const hashioki=new THREE.Mesh(new THREE.CapsuleGeometry(0.0045,0.03,6,12).rotateZ(Math.PI/2).scale(1,0.8,1.1),new THREE.MeshPhysicalMaterial({color:0xf2efe8,roughness:.25,clearcoat:1}));hashioki.position.set(0.21,0.0037,-0.035);hashioki.rotation.y=Math.PI/2-0.15;hashioki.visible=false;
 const hashiokiInv=new THREE.Matrix4(),_hk=new THREE.Vector3();
-function hashiokiIn(p){_hk.copy(p).applyMatrix4(hashiokiInv);const x=_hk.x,y=_hk.y/0.8,z=_hk.z/1.1;const cx=Math.max(-0.015,Math.min(0.015,x));return (x-cx)**2+y*y+z*z<0.0045*0.0045;}
-function glassIn(p){return Math.hypot(p.x-0.17,p.z+0.27)<0.0345&&p.y<0.1;}
+function hashiokiIn(p){return false;_hk.copy(p).applyMatrix4(hashiokiInv);const x=_hk.x,y=_hk.y/0.8,z=_hk.z/1.1;const cx=Math.max(-0.015,Math.min(0.015,x));return (x-cx)**2+y*y+z*z<0.0045*0.0045;}
+function glassIn(p){return Math.hypot(p.x-cupG.position.x,p.z-cupG.position.z)<0.0345&&p.y<cupG.position.y+0.1&&p.y>cupG.position.y-0.001;}
 let hashiRest=null;
 const restHashi=()=>{if(!hashiRest){hashioki.updateMatrixWorld(true);hashiokiInv.copy(hashioki.matrixWorld).invert();const P=[];for(const x of [-0.006,0.006])HPL.forEach(p=>P.push(p.clone().setX(p.x+x)));
   const c=[];for(let a=-0.12;a<=0.12;a+=0.0025)c.push({pos:new THREE.Vector3(0.21,0,0.07),rot:new THREE.Euler(a,-0.15,0),ymin:-0.02,ymax:0.1});hashiRest=solvePose(P,p=>p.y<0||hashiokiIn(p),c);}
- hashi.position.copy(hashiRest.pos);hashi.rotation.copy(hashiRest.rot);hashi.children[0].position.x=-0.006;hashi.children[1].position.x=0.006;};
+ hashi.position.copy(hashiRest.pos);hashi.rotation.copy(hashiRest.rot);hashi.children.forEach((c,i)=>{c.position.x=i?0.006:-0.006;c.rotation.set(0,0,0);});hashi.visible=false;};
+const handIn=()=>mouthPos().add(new THREE.Vector3(0.075,-0.075,0.025));
 // spoon rests inside the bowl: cup on the noodle bed / bowl wall, handle over the rim (gravity: lowest centre of mass, no penetration)
 const PHI_R=-0.25;const spoonCache={};let spoonOnTable=false,tablePose=null;
 function floorY(){return items.men&&items.men.left>0?toppingsRoot.position.y+S-0.012:0.0;}
@@ -392,10 +393,14 @@ window.__audit=()=>{const out=new Set();scene.updateMatrixWorld(true);_bi.copy(b
  if(renge.visible){for(const p of RP){w.copy(p).applyMatrix4(renge.matrixWorld);const h=penWorld(w);if(h){out.add('spoon×'+h);break;}}
   if(bowl.visible&&!spoonOnTable&&!busy){for(const p of RP){w.copy(p).applyMatrix4(renge.matrixWorld).applyMatrix4(_bi);if(softIn(w)){out.add('spoon×sprouts/wakame');break;}}}
   for(const m of tops){_tm.copy(m.matrixWorld).invert();for(let i=0;i<RP.length;i+=2){w.copy(RP[i]).applyMatrix4(renge.matrixWorld).applyMatrix4(_tm);if(insideLocal(m,w)){out.add('spoon×'+m.name);break;}}}}
- for(const s of hashi.children){for(const p of HPL){w.copy(p).applyMatrix4(s.matrixWorld);const h=penWorld(w);if(h){out.add('hashi×'+h);break;}}}
- if(renge.visible)for(const s of hashi.children){_tm.copy(renge.matrixWorld).invert();for(const p of HPL){w.copy(p).applyMatrix4(s.matrixWorld).applyMatrix4(_tm);if(Math.abs(w.x)<0.02&&w.z>-0.035&&w.z<0.14&&w.y>-0.014&&w.y<0.03){/* coarse spoon hull */const inCup=w.z<CUP_L&&(w.x/CUP_W)**2+(w.z/CUP_L)**2<1&&w.y<0.001&&w.y>-CUP_D;if(inCup){out.add('hashi×spoon');break;}}}}
+ if(hashi.visible)for(const s of hashi.children){for(const p of HPL){w.copy(p).applyMatrix4(s.matrixWorld);const h=penWorld(w);if(h){out.add('hashi×'+h);break;}}}
+ if(renge.visible&&hashi.visible)for(const s of hashi.children){_tm.copy(renge.matrixWorld).invert();for(const p of HPL){w.copy(p).applyMatrix4(s.matrixWorld).applyMatrix4(_tm);if(Math.abs(w.x)<0.02&&w.z>-0.035&&w.z<0.14&&w.y>-0.014&&w.y<0.03){/* coarse spoon hull */const inCup=w.z<CUP_L&&(w.x/CUP_W)**2+(w.z/CUP_L)**2<1&&w.y<0.001&&w.y>-CUP_D;if(inCup){out.add('hashi×spoon');break;}}}}
  if(bowl.visible)for(const m of tops){const p=m.geometry.attributes.position;for(let i=0;i<p.count;i+=3){w.fromBufferAttribute(p,i).applyMatrix4(m.matrixWorld).applyMatrix4(_bi);if(inBowlSolid(w.x,w.y,w.z)){out.add(m.name+'×bowl');break;}}}
  for(let i=0;i<tops.length;i++)for(let j=i+1;j<tops.length;j++)if(meshOverlap(tops[i],tops[j]))out.add(tops[i].name+'×'+tops[j].name);
+ // every topping and the noodles must stay inside the bowl cavity: not through the wall, not outside, not below the floor
+ if(bowl.visible&&state!=='arrive'){const vis=o=>{while(o){if(!o.visible)return false;o=o.parent;}return true;};const M=[];noodleGroups.forEach(m=>M.push([m,'noodles',23]));sproutLayers.forEach(l=>l.children.forEach(m=>M.push([m,'sprouts',7])));wakameParts.forEach(g=>g.children.forEach(m=>M.push([m,'wakame',5])));tops.forEach(m=>M.push([m,m.name,3]));
+  for(const [m,nm,st] of M){if(!vis(m))continue;const p=m.geometry.attributes.position;for(let i=0;i<p.count;i+=st){w.fromBufferAttribute(p,i).applyMatrix4(m.matrixWorld).applyMatrix4(_bi);const r=Math.hypot(w.x,w.z);
+   if(w.y<-0.0005){out.add(nm+'×below-floor');break;}if(w.y<BH+0.01&&r>innerR(Math.max(0,w.y))+0.0015){out.add(nm+'×outside-bowl');break;}if(nm==='noodles'||nm==='sprouts'||nm==='wakame'){if(inBowlSolid(w.x,w.y,w.z)){out.add(nm+'×bowl');break;}}}}}
  if(renge.visible&&!busy&&state!=='arrive'){const sup=window.__spoonSupport();if(sup.n<2||sup.span<0.025)out.add('spoon×floating');}
  return [...out];};
 // support check: spoon must touch real supports (bowl wall/rim, noodle mass on bowl floor, table, hashioki) at >=2 points spread apart
@@ -411,7 +416,7 @@ window.__spoonSupport=()=>{scene.updateMatrixWorld(true);_bi.copy(bowl.matrixWor
 
 // ---------- steam (soft sprites, from soup & noodles only — chashu is cold) ----------
 const steamTex=ctex(128,128,(g,w,h)=>{const gr=g.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,255,255,.55)');gr.addColorStop(.5,'rgba(255,255,255,.18)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,w,h);});
-const steams=[];for(let i=0;i<(Math.min(innerWidth,innerHeight)<600?12:20);i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:steamTex,transparent:true,depthWrite:false,opacity:0}));s.userData={t:Math.random(),a:R(0,6.28),r:R(0,.09),rot:R(-1,1)};bowl.add(s);steams.push(s);}
+const steams=[];for(let i=0;i<(Math.min(innerWidth,innerHeight)<600?18:30);i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:steamTex,transparent:true,depthWrite:false,opacity:0}));s.userData={t:Math.random(),a:R(0,6.28),r:R(0,.09),rot:R(-1,1)};bowl.add(s);steams.push(s);}
 const liftSteam=[];for(let i=0;i<6;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:steamTex,transparent:true,depthWrite:false}));s.visible=false;scene.add(s);liftSteam.push(s);}
 const dripMat=new THREE.MeshPhysicalMaterial({color:0xd7c08a,roughness:.1,clearcoat:1,transparent:true,opacity:.9});
 const drips=[];for(let i=0;i<8;i++){const d=new THREE.Mesh(new THREE.SphereGeometry(0.0022,8,6),dripMat);d.visible=false;scene.add(d);drips.push({m:d,v:0,on:false});}
@@ -423,9 +428,13 @@ function audioInit(){if(AC)return;AC=new (window.AudioContext||window.webkitAudi
 function noiseBuf(sec){const len=AC.sampleRate*sec,b=AC.createBuffer(1,len,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;return b;}
 function clink(f=2400,vol=.25){if(!AC)return;const t=AC.currentTime;[1,2.76,5.4].forEach((k,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f*k;g.gain.setValueAtTime(vol/(i+1),t);g.gain.exponentialRampToValueAtTime(.0001,t+.35/(i+1));o.connect(g).connect(master);o.start(t);o.stop(t+.4);});}
 function clatter(v){if(!AC)return;const t=AC.currentTime;for(let i=0;i<3;i++){const o=AC.createOscillator(),g=AC.createGain();o.type='triangle';o.frequency.value=R(1200,3500);g.gain.setValueAtTime(v,t+i*.06);g.gain.exponentialRampToValueAtTime(.0001,t+i*.06+.15);o.connect(g).connect(master);o.start(t+i*.06);o.stop(t+i*.06+.2);}}
-function slurp(dur=1.0,strong=1){if(!AC)return;const t=AC.currentTime;const s=AC.createBufferSource();s.buffer=noiseBuf(dur+.1);const bp=AC.createBiquadFilter();bp.type='bandpass';bp.Q.value=2.5;
- bp.frequency.setValueAtTime(700,t);bp.frequency.linearRampToValueAtTime(2600,t+dur);const g=AC.createGain();g.gain.setValueAtTime(0,t);
- for(let k=0;k<dur*9;k++){g.gain.linearRampToValueAtTime(.5*strong*R(.4,1),t+k/9+.04);g.gain.linearRampToValueAtTime(.08,t+k/9+.1);}g.gain.linearRampToValueAtTime(0,t+dur);s.connect(bp).connect(g).connect(master);s.start(t);}
+function slurp(dur=1.0,strong=1){if(!AC)return;const t=AC.currentTime;const n=Math.max(1,Math.round(dur*2));const pl=dur/n;
+ for(let i=0;i<n;i++){const t0=t+i*pl;const s=AC.createBufferSource();s.buffer=noiseBuf(pl);const bp=AC.createBiquadFilter();bp.type='bandpass';bp.Q.value=5;bp.frequency.setValueAtTime(650,t0);bp.frequency.exponentialRampToValueAtTime(1900,t0+pl*0.8);
+  const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=3200;const g=AC.createGain();g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(0.55*strong,t0+0.05);g.gain.setValueAtTime(0.45*strong,t0+pl*0.55);g.gain.exponentialRampToValueAtTime(0.0001,t0+pl*0.9);
+  const tr=AC.createGain();tr.gain.value=0.55;const lfo=AC.createOscillator();lfo.frequency.value=R(24,32);const ld=AC.createGain();ld.gain.value=0.45;lfo.connect(ld).connect(tr.gain);
+  s.connect(bp).connect(lp).connect(g).connect(tr).connect(master);s.start(t0);s.stop(t0+pl);lfo.start(t0);lfo.stop(t0+pl);}}
+function paki(){if(!AC)return;const t=AC.currentTime;[0,0.035].forEach((d,i)=>{const s=AC.createBufferSource();s.buffer=noiseBuf(.05);const hp=AC.createBiquadFilter();hp.type='bandpass';hp.frequency.value=i?2600:1700;hp.Q.value=3;const g=AC.createGain();g.gain.setValueAtTime(i?.5:.9,t+d);g.gain.exponentialRampToValueAtTime(.0001,t+d+.045);s.connect(hp).connect(g).connect(master);s.start(t+d);});
+ const o=AC.createOscillator();o.type='triangle';o.frequency.setValueAtTime(900,t);o.frequency.exponentialRampToValueAtTime(300,t+.05);const g=AC.createGain();g.gain.setValueAtTime(.25,t);g.gain.exponentialRampToValueAtTime(.0001,t+.06);o.connect(g).connect(master);o.start(t);o.stop(t+.07);}
 function chew(n=4){if(!AC)return;const t=AC.currentTime;for(let i=0;i<n;i++){const s=AC.createBufferSource();s.buffer=noiseBuf(.12);const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=900;const g=AC.createGain();g.gain.setValueAtTime(.0001,t+i*.28);g.gain.linearRampToValueAtTime(.25,t+i*.28+.03);g.gain.exponentialRampToValueAtTime(.0001,t+i*.28+.12);s.connect(lp).connect(g).connect(master);s.start(t+i*.28);}}
 function crunch(n=5){if(!AC)return;const t=AC.currentTime;for(let i=0;i<n;i++){const s=AC.createBufferSource();s.buffer=noiseBuf(.06);const hp=AC.createBiquadFilter();hp.type='bandpass';hp.frequency.value=3000;const g=AC.createGain();g.gain.setValueAtTime(.3,t+i*.18);g.gain.exponentialRampToValueAtTime(.0001,t+i*.18+.05);s.connect(hp).connect(g).connect(master);s.start(t+i*.18);}}
 function kitchen(sec){return;const t=AC.currentTime;const s=AC.createBufferSource();s.buffer=noiseBuf(sec);const bp=AC.createBiquadFilter();bp.type='highpass';bp.frequency.value=1800;const g=AC.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.12,t+.5);g.gain.linearRampToValueAtTime(.18,t+sec*.6);g.gain.linearRampToValueAtTime(0,t+sec);s.connect(bp).connect(g).connect(master);s.start(t);
@@ -440,21 +449,22 @@ const ripples=[];for(let i=0;i<8;i++){const m=new THREE.Mesh(new THREE.PlaneGeom
 function ripple(wx,wz,n=2){for(let k=0;k<n;k++){const r=ripples.find(r=>r.t>=1);if(!r)return;r.t=-k*0.25;r.m.position.set(wx-bowl.position.x,soupY()+0.0012,wz-bowl.position.z);r.m.visible=true;}}
 let steamBoost=0,camDip=0;
 // hanging noodle strands (sag & swing while lifting)
-const hangGeo=[];for(let i=0;i<9;i++){const pts=[];for(let k=0;k<=16;k++){const t=k/16;pts.push(new THREE.Vector3(Math.sin(t*40+i)*0.002+(i-4)*0.0016,-t,Math.cos(t*37+i)*0.002+Math.sin(t*Math.PI)*0.004*(i%3-1)));}hangGeo.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),48,0.0019,5));}
+const hangGeo=[];for(let i=0;i<10;i++){const pts=[];const ph=i*1.7,fq=52+i*3;for(let k=0;k<=60;k++){const t=k/60;pts.push(new THREE.Vector3(Math.sin(t*fq+ph)*0.0026+(i-4.5)*0.0019,-t,Math.cos(t*(fq-7)+ph*1.3)*0.0024+Math.sin(t*Math.PI)*0.004*(i%3-1)));}hangGeo.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),160,0.0021,6));}
 const hang=new THREE.Mesh(mergeGeometries(hangGeo),noodleMat);hang.visible=false;hang.castShadow=true;scene.add(hang);
+const hangUp=new THREE.Mesh(hang.geometry,noodleMat);hangUp.visible=false;hangUp.frustumCulled=false;scene.add(hangUp);hang.frustumCulled=false;let camLean=0;
 
 // ---------- UI ----------
 const $=id=>document.getElementById(id);
 let msgTimer;function say(t,best){const m=$('msg');m.textContent=t;m.className=best?'best':'';m.style.opacity=1;clearTimeout(msgTimer);msgTimer=setTimeout(()=>m.style.opacity=0,best?3200:2200);}
 $('filmBtn').onclick=()=>$('wrap').classList.toggle('film');
 const LINES={men:['縮れ麺に味噌がからむ','ずずっ…うまい','麺もうまいんだよなぁ','まだまだ、ずずっ','最後のひとすすり'],
- chashu:['冷たいチャーシュー、やっぱり世界一','この冷たさがいいんだ…世界一','世界一うまい。間違いない'],
- moyashi:['シャキシャキのもやし','もやしでひと休み','もやし、最後まで元気'],wakame:['わかめ、つるっと','磯の香り'],kani:['カニカマ、なつかしい'],
+ chashu:['冷たいチャーシュー、やっぱり世界一','この冷たさがいいんだ…世界一','世界一うまい。間違いない','まだある、チャーシュー','肉の甘み…世界一','冷たいのがたまらない','あと少し…','最後の一枚、世界一'],
+ moyashi:['シャキシャキのもやし','もやしでひと休み','もやし、最後まで元気'],wakame:['わかめ、つるっと','磯の香り'],kani:['カニカマ、なつかしい','もう一本、カニカマ'],
  menma:['メンマ、こりっ','太いメンマがいい','メンマの歯ごたえ','最後のメンマ'],
  soup:['ニンニクが効いてる','濃い味噌、あったまる','ああ、この味だ','ニンニクがしみる','すり目が見えてきた','まだ飲める','レンゲが止まらない','あと少し','底が見えてきた','…飲み干した']};
 const bar=$('bar');
-function buildBar(){bar.innerHTML='';Object.values(items).forEach(it=>{const b=document.createElement('button');b.dataset.item=it.name;b.onclick=e=>{e.stopPropagation();eat(it.name);};bar.appendChild(b);});const d=document.createElement('button');d.dataset.drink='1';d.id='drinkBtn';d.textContent='どんぶりで飲む';d.onclick=e=>{e.stopPropagation();drinkBowl();};bar.appendChild(d);refreshBar();}
-function refreshBar(){[...bar.children].forEach(b=>{if(b.dataset.drink){b.disabled=items.soup.left<=0;return;}const it=items[b.dataset.item];b.disabled=it.left<=0;b.textContent=it.label+(it.portions>1&&it.left>0?` ${it.left}`:'');});}
+function buildBar(){bar.innerHTML='';Object.values(items).forEach(it=>{const b=document.createElement('button');b.dataset.item=it.name;b.onclick=e=>{e.stopPropagation();eat(it.name);};bar.appendChild(b);});const w=document.createElement('button');w.dataset.water='1';w.id='waterBtn';w.textContent='水';w.onclick=e=>{e.stopPropagation();drinkWater();};bar.appendChild(w);const d=document.createElement('button');d.dataset.drink='1';d.id='drinkBtn';d.textContent='どんぶりで飲む';d.onclick=e=>{e.stopPropagation();drinkBowl();};bar.appendChild(d);refreshBar();}
+function refreshBar(){[...bar.children].forEach(b=>{if(b.dataset.water){b.disabled=waterLv<=0.01;b.textContent=waterLv>0.01?'水':'水（空）';return;}if(b.dataset.drink){b.disabled=items.soup.left<=0;return;}const it=items[b.dataset.item];b.disabled=it.left<=0;b.textContent=it.label+(it.portions>1&&it.left>0?` ${it.left}`:'');});}
 
 // ---------- state & camera ----------
 let state='enter',busy=false,order=[],bites=[];
@@ -464,7 +474,7 @@ const camDoor={pos:new THREE.Vector3(0.55,0.55,1.6),look:new THREE.Vector3(0,0.2
 const camCur={pos:camDoor.pos.clone(),look:camDoor.look.clone()};
 let camTarget=camDoor,peek=0,yaw=0;
 bowl.position.set(0,FOOT,-0.45);bowl.visible=false;renge.visible=false;
-function resetBowl(){soupLevel=1;Object.values(items).forEach(it=>{it.left=it.portions;it.objs.forEach(o=>o.visible=true);});order=[];bites=[];updateSoup();spoonOnTable=false;settle();restHashi();restRenge();buildBar();}
+function resetBowl(){soupLevel=1;waterLv=1;setWater();Object.values(items).forEach(it=>{it.left=it.portions;it.objs.forEach(o=>o.visible=true);});order=[];bites=[];updateSoup();spoonOnTable=false;settle();restHashi();restRenge();buildBar();}
 $('enterBtn').onclick=()=>{audioInit();$('ovEnter').classList.add('hide');setTimeout(()=>$('ovNin').classList.remove('hide'),700);};
 $('ninBtn').onclick=()=>{$('ovNin').classList.add('hide');say('「カウンターへどうぞ」');camTarget=camFar;setTimeout(()=>$('ovMenu').classList.remove('hide'),2200);};
 document.querySelectorAll('.tan[data-m]').forEach(el=>el.onclick=()=>{const md=el.dataset.m;setupChashu(md);$('ovMenu').classList.add('hide');say(md==='chashu'?'「味噌チャーシューね！ちょっと待っててね！」':'「味噌ラーメンね！ちょっと待っててね！」');state='wait';kitchen(3.2);setTimeout(arrive,3300);});
@@ -535,12 +545,35 @@ function obaPose(){obaUp.rotation.x=obaLean;oba.updateMatrixWorld(true);
   _h.lerpVectors(rest,grip,obaReach);h.position.copy(_h);
   const d=_h.clone().sub(_s),L=d.length();a.position.copy(_s).addScaledVector(d,.5);a.scale.set(1,L,1);a.quaternion.setFromUnitVectors(_up,d.normalize());});}
 function obaIdle(t){if(state==='arrive')return;obaUp.userData.head.rotation.z=Math.sin(t*0.0011)*0.05;obaUp.userData.head.rotation.x=0.12+Math.sin(t*0.0007)*0.03;}
+// serving: only the obasan's hands (and sleeves) come in from the right edge of the screen and set the bowl down
+const SH_DIR=new THREE.Vector3(0.86,0.33,-0.38).normalize(),SH_LEN=0.6;
+const servHands=[1,-1].map(sd=>{const g=new THREE.Group();const arm=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.036,SH_LEN,14),obaArmMat);arm.position.y=SH_LEN/2+0.03;
+ const cuff=new THREE.Mesh(new THREE.CylinderGeometry(0.031,0.031,0.03,14),new THREE.MeshStandardMaterial({color:0x5b3d50,roughness:.85}));cuff.position.y=0.035;
+ const hand=new THREE.Mesh(new THREE.SphereGeometry(0.026,16,12),obaHandMat);hand.scale.set(1.05,0.75,1.35);const th=new THREE.Mesh(new THREE.CapsuleGeometry(0.008,0.02,4,8),obaHandMat);th.position.set(0.0,-0.004,0.022*sd);th.rotation.x=Math.PI/2*0.7;
+ g.add(arm,cuff,hand,th);g.traverse(o=>{if(o.isMesh)o.castShadow=true;});g.visible=false;scene.add(g);return {g,sd};});
+function placeHands(out){servHands.forEach(({g,sd})=>{const p=bowl.position.clone().add(new THREE.Vector3(0.035,BH*0.62,sd*(outerR(BH*0.62)+0.02)));p.addScaledVector(SH_DIR,out);g.position.copy(p);g.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),SH_DIR);g.visible=out<SH_LEN+0.1;});}
 function arrive(){window.__arrT=performance.now();resetBowl();bowl.visible=true;renge.visible=true;state='arrive';steamBoost=1;ripple(0,0,3);const t0=performance.now();const p0=camCur.pos.clone(),l0=camCur.look.clone();
- const step=()=>{const k=Math.min(1,(performance.now()-t0)/3400);const e=1-Math.pow(1-k,3);obaReach=1;obaLean=0.15+0.45*e;bowl.position.set(0,FOOT+0.12*(1-e)+Math.sin(k*Math.PI)*0.02,-0.45*(1-e));restRenge();
-  {const SVp=new THREE.Vector3(0.12,0.42,0.62),SVl=new THREE.Vector3(0,0.24,-0.5);const e1=THREE.MathUtils.smoothstep(k,0,0.3);camCur.pos.lerpVectors(p0,SVp,e1);camCur.look.lerpVectors(l0,SVl,e1);} // serve view: obasan + bowl both in frame // camera arrives exactly with the bowl → no early-tap misses
-  if(k<1)requestAnimationFrame(step);else{const r0=performance.now();const back=()=>{const q=Math.min(1,(performance.now()-r0)/900);const eq=q*q*(3-2*q);obaReach=1-eq;obaLean=0.6*(1-eq);if(q<1)requestAnimationFrame(back);else obaLeave();};setTimeout(back,1400);camTarget={pos:camCur.pos.clone(),look:camCur.look.clone()};settle();restRenge();clink(600,.25);say('「お待ちどうさま！」');window.__serveT=performance.now();setTimeout(()=>{camTarget=camRest;setTimeout(()=>{state='eat';window.__eatT=performance.now();},900);},2400);bar.style.display='flex';$('hint').textContent=isMobile?'タップで食べる／ドラッグでのぞく':'クリックで食べる・ドラッグでのぞき込む';}};step();}
+ oba.visible=false;obaArms.forEach(o=>{o.a.visible=o.h.visible=false;});obaReach=0;obaLean=0;
+ const B0=new THREE.Vector3(0.5,FOOT+0.07,-0.14),B1=new THREE.Vector3(0,FOOT,0);
+ const step=()=>{const k=Math.min(1,(performance.now()-t0)/3000);const e=k<1?1-Math.pow(1-k,3):1;bowl.position.lerpVectors(B0,B1,e);bowl.position.y=FOOT+0.07*(1-e)*(1-e)+Math.sin(Math.min(1,e*1.1)*Math.PI)*0.012*(1-e);placeHands(0);restRenge();
+  {const e1=THREE.MathUtils.smoothstep(k,0,0.35);camCur.pos.lerpVectors(p0,camRest.pos,e1);camCur.look.lerpVectors(l0,camRest.look,e1);}
+  if(k<1)requestAnimationFrame(step);else{bowl.position.copy(B1);settle();restRenge();clink(600,.25);say('「お待ちどうさま！」');window.__serveT=performance.now();camTarget=camRest;
+   const r0=performance.now()+700;const back=()=>{const q=Math.max(0,Math.min(1,(performance.now()-r0)/900));placeHands(0.75*q*q*(3-2*q));if(q<1)requestAnimationFrame(back);else{servHands.forEach(h=>h.g.visible=false);oba.position.set(0.8,0,-0.62);oba.visible=true;obaArms.forEach(o=>{o.a.visible=o.h.visible=true;});obaLeave();}};back();
+   setTimeout(()=>{setTimeout(async()=>{await waribashi();state='eat';window.__eatT=performance.now();},900);},1800);bar.style.display='flex';$('hint').textContent=isMobile?'タップで食べる／ドラッグでのぞく':'クリックで食べる・ドラッグでのぞき込む';}};step();}
 $('againBtn').onclick=()=>{$('ovEnd').classList.add('hide');camCur.pos.copy(camFar.pos);camCur.look.copy(camFar.look);arrive();};
 
+// ---------- waribashi: split the disposable chopsticks before eating ----------
+async function waribashi(){const P=headP().addScaledVector(headD(),0.2).add(new THREE.Vector3(0,-0.045,0));
+ const M=new THREE.Matrix4().makeBasis(new THREE.Vector3(0,1,0),new THREE.Vector3(0,0,1),new THREE.Vector3(1,0,0));hashi.quaternion.setFromRotationMatrix(M);
+ const c0=hashi.children[0],c1=hashi.children[1];const set=(e,w)=>{const P=headP().addScaledVector(headD(),0.2).add(new THREE.Vector3(0,-0.01,0));c0.position.x=-0.0034-0.02*e;c1.position.x=0.0034+0.02*e;c0.rotation.y=0.2*e;c1.rotation.y=-0.2*e;hashi.position.copy(P).add(new THREE.Vector3(0.105+w,0,0));};
+ set(0,0.3);hashi.visible=true;window.__wari=1;
+ await anim(450,k=>set(0,0.3*(1-ease(k))));
+ await anim(300,k=>set(0,Math.sin(k*40)*0.0008));
+ paki();window.__wari=2;
+ await anim(170,k=>set(ease(k),0));
+ await anim(550,k=>set(1,0));
+ await anim(300,k=>{set(1,0);hashi.position.add(new THREE.Vector3(0.05*ease(k),-0.06*ease(k),0.02*ease(k)));});
+ window.__wari=3;restHashi();}
 // ---------- eating ----------
 const tmpV=new THREE.Vector3();
 const ANIMS=new Set();function anim(dur,fn){return new Promise(res=>{const t0=performance.now();const a={f:()=>{const k=Math.min(1,(performance.now()-t0)/dur);fn(k);if(k>=1){ANIMS.delete(a);res();}}};ANIMS.add(a);a.f();});}
@@ -548,8 +581,8 @@ window.__stepAnims=()=>[...ANIMS].forEach(a=>a.f());
 const ease=k=>k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
 async function eat(name){if(state!=='eat'||busy)return;const it=items[name];if(!it||it.left<=0)return;busy=true;
  const idx=it.portions-it.left;
- window.__curItem=it.name;try{if(it.tool==='renge')await sipSoup(it,idx);else await pick(it,idx);}catch(e){console.warn(e);}settle();restRenge();
- it.left--;bites.push(it.label);if(!order.includes(it.label))order.push(it.label);
+ window.__curItem=it.name;try{if(it.tool==='renge')await sipSoup(it,idx);else await pick(it,idx);}catch(e){console.warn(e);}
+ it.left--;updateSoup();settle();restRenge();bites.push(it.label);if(!order.includes(it.label))order.push(it.label);
  say(LINES[name][Math.min(idx,LINES[name].length-1)],name==='chashu');
  refreshBar();busy=false;if(Object.values(items).every(i=>i.left<=0))finish();}
 const HD=new THREE.Vector3(0.3,0.6,0.75).normalize();
@@ -559,7 +592,7 @@ const surfY=()=>bowl.position.y+soupY();
 async function pick(it,idx){
  const obj=it.objs[idx];const start=new THREE.Vector3();
  const bb=new THREE.Box3().setFromObject(obj);bb.getCenter(start);start.y=bb.max.y;if(it.name==='chashu'||it.name==='men'){const RM=it.name==='men'?0.05:0.068;const dx=start.x-bowl.position.x,dz=start.z-bowl.position.z,r=Math.hypot(dx,dz);if(r>RM){const f=RM/r;start.x=bowl.position.x+dx*f;start.z=bowl.position.z+dz*f;}}
- const t0p=tipPos(),q0=hashi.quaternion.clone();clink(3200,.06);
+ hashi.visible=true;holdAt(handIn(),0);const t0p=tipPos(),q0=hashi.quaternion.clone();clink(3200,.06);
  {const hi=Math.max(t0p.y,start.y,bowl.position.y+BH+0.045);await anim(520,k=>{const e=ease(k),a1=ease(Math.min(1,k/0.6));const G=new THREE.Vector3().lerpVectors(t0p,start,a1);G.y=k<0.6?t0p.y+(hi-t0p.y)*a1:hi+(start.y-hi)*ease((k-0.6)/0.4);holdAt(G,e);});}
  holdAt(start,0);ripple(start.x,start.z,2);
  const isNoodle=it.name==='men';const lift=start.clone().add(new THREE.Vector3(0,0.13,0.04));
@@ -573,13 +606,20 @@ async function pick(it,idx){
    drips.forEach(d=>{if(d.on&&d.delay>0.25){d.m.position.set(G.x+R(-.003,.003),G.y-L*R(.3,.9),G.z);}});});
   // 2) blow to cool: steam pushed away, strands sway
   await anim(650,k=>{const G=lift.clone();G.x+=Math.sin(k*Math.PI*2)*0.004;holdAt(G,0);const L=G.y-surfY();hang.position.copy(G);hang.scale.set(1,L,1);hang.rotation.set(Math.sin(k*8)*0.05,0,Math.sin(k*6)*0.06+0.05*Math.sin(k*Math.PI));steamAt(G,L,Math.sin(k*Math.PI));});
-  // 3) slurp: grip goes just below the mouth, strands are drawn up through it, tails flick last
-  const mp=mouthPos();const Gm=mp.clone().add(new THREE.Vector3(0,-0.014,0));slurp(0.9,1);let L25=0,sprayed=false;
-  await anim(800,k=>{camDip=0.016*Math.sin(Math.min(1,k*1.1)*Math.PI);const m=ease(Math.min(1,k*1.5));const G=new THREE.Vector3().lerpVectors(lift,Gm,m);holdAt(G,0);
-   let L;if(k<0.25){L=G.y-surfY();obj.scale.y=sy*0.5*(1-k/0.25);L25=L;}else{if(obj.visible){obj.visible=false;obj.scale.y=sy;}const u=(k-0.25)/0.75;L=L25*(1-Math.pow(u,1.4));}
-   hang.position.copy(G);hang.scale.set(1,Math.max(0.0005,L),1);const whip=k>0.55?(k-0.55)/0.45:0;hang.rotation.set(-whip*1.1+Math.sin(k*34)*0.18*k,0,Math.sin(k*27)*0.2*k);steamAt(G,L,0.3);
-   if(k>0.8&&!sprayed){sprayed=true;drips.forEach((d,i)=>{if(i>4)return;d.on=true;d.m.visible=true;d.delay=0;d.m.position.set(G.x,G.y-L,G.z);d.v=R(.2,.5);d.vx=R(-.15,.15);d.vz=R(-.05,.1);});}});
-  camDip=0;hang.visible=false;liftSteam.forEach(s=>s.visible=false);obj.scale.y=sy;obj.visible=false;
+  // 3) lean in: the face comes down toward the bowl, the strand ends go up to the lips
+  const D3=(A,B,f)=>{const d=A.clone().sub(B);const L=d.length();hangUp.visible=f>0.001;hangUp.position.copy(B).addScaledVector(d,1-f);hangUp.quaternion.setFromUnitVectors(V3(0,-1,0),d.normalize());hangUp.scale.set(1,Math.max(0.0005,L*f),1);};
+  let G=lift.clone();
+  await anim(700,k=>{const e=ease(k);camLean=0.075*e;const mp=mouthPos();const Gm=mp.clone().add(V3(0.003,-0.026,-0.01));G=new THREE.Vector3().lerpVectors(lift,Gm,e);holdAt(G,0);const L=Math.max(0.004,G.y-surfY());
+   hang.position.copy(G);hang.scale.set(1,L,1);hang.rotation.set(Math.sin(k*7)*0.03*(1-k),0,0);D3(G,mp,ease(Math.max(0,(k-0.35)/0.65)));steamAt(G,L,0.2);});
+  // 4) zuru-zuru-zuru: three pulls; the hanging strands shorten from the top, the bowl end rises and follows
+  slurp(1.5,1);const L0=Math.max(0.004,G.y-surfY());const sy0=obj.scale.y;
+  await anim(1500,k=>{const p=Math.min(1,k-Math.sin(k*6*Math.PI)/(6*Math.PI));const mp=mouthPos();camLean=0.075+0.004*Math.sin(k*6*Math.PI);
+   const L=L0*(1-p);hang.visible=L>0.0008;hang.position.copy(G);hang.scale.set(1,Math.max(0.0005,L),1);const sw=(1-p)*0.06;hang.rotation.set(Math.sin(k*30)*sw,0,Math.sin(k*23)*sw);
+   D3(G,mp,1);obj.scale.y=sy0*Math.max(0.02,1-k*3);if(k>0.34&&obj.visible){obj.visible=false;obj.scale.y=sy;}steamAt(G,L,0.3);});
+  // the last tail slips past the chopsticks into the mouth
+  await anim(260,k=>{const mp=mouthPos();D3(G,mp,1-ease(k));});
+  hangUp.visible=false;hang.visible=false;liftSteam.forEach(s=>s.visible=false);obj.scale.y=sy;obj.visible=false;
+  await anim(520,k=>{camLean=0.075*(1-ease(k));const mp=mouthPos();holdAt(G.clone().lerp(mp.clone().add(V3(0.07,-0.07,0.02)),ease(k)),0);});camLean=0;
  }else if(it.name==='chashu'){await eatChashu(obj,start,lift);
  }else if(it.name==='moyashi'){await eatMoyashi(obj);
  }else{
@@ -593,25 +633,30 @@ async function pick(it,idx){
   scene.remove(pivot);camDip=0;
  }
  if(it.name==='chashu')bestFlash();
- const tp=tipPos();restHashi();const rq=hashi.quaternion.clone(),rpos=hashi.position.clone();const sq=new THREE.Quaternion();
- const fromPos=tp.clone().addScaledVector(HD,0.21);const fromQ=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(fromPos,fromPos.clone().add(HD),new THREE.Vector3(0,1,0)));
- hashi.position.copy(fromPos);holdAt(tp,0);const fq=hashi.quaternion.clone();
- await anim(420,k=>{const e=ease(k);hashi.position.lerpVectors(fromPos,rpos,e);hashi.quaternion.slerpQuaternions(fq,rq,e);});restHashi();}
+ const tp=tipPos(),hi=handIn();await anim(320,k=>holdAt(new THREE.Vector3().lerpVectors(tp,hi,ease(k)),0));restHashi();}
+async function drinkWater(){if(state!=='eat'||busy||waterLv<=0.01)return;busy=true;window.__curItem='water';const P0=cupG.position.clone();
+ const tgt=()=>{const m=mouthPos().add(new THREE.Vector3(0.005,-0.012,-0.02));return m;};const rim=a=>new THREE.Vector3(0,0.1*Math.cos(a),0.1*Math.sin(a));
+ await anim(800,k=>{const e=ease(k);const a=0.35*e;const T=tgt().sub(rim(a));const mid=new THREE.Vector3().lerpVectors(P0,T,e);mid.y+=Math.sin(Math.PI*e)*0.03;cupG.position.copy(mid);cupG.rotation.x=a;});
+ const w0=waterLv,w1=Math.max(0,w0-0.34);setTimeout(gulp,350);setTimeout(gulp,900);
+ await anim(1400,k=>{const e=ease(k);const a=0.35+0.75*Math.sin(Math.PI*Math.min(1,k*1.1))*0.9;cupG.rotation.x=a;cupG.position.copy(tgt().sub(rim(a)));waterLv=w0+(w1-w0)*ease(Math.max(0,Math.min(1,(k-0.15)/0.7)));setWater();camDip=0.008*Math.sin(Math.PI*k);});
+ const Pm=cupG.position.clone(),a0=cupG.rotation.x;
+ await anim(800,k=>{const e=ease(k);cupG.position.lerpVectors(Pm,P0,e);cupG.position.y+=Math.sin(Math.PI*e)*0.03;cupG.rotation.x=a0*(1-e);});
+ cupG.position.copy(P0);cupG.rotation.x=0;clink(1400,.08);camDip=0;say(waterLv<=0.01?'水も、ぜんぶ飲んだ':'冷たい水で、ひと息');refreshBar();busy=false;}
 function gulp(){if(!AC)return;const t=AC.currentTime;const o=AC.createOscillator();o.type='sine';o.frequency.setValueAtTime(170,t);o.frequency.exponentialRampToValueAtTime(70,t+.18);const g=AC.createGain();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.09,t+.03);g.gain.exponentialRampToValueAtTime(.0001,t+.22);o.connect(g).connect(master);o.start(t);o.stop(t+.25);}
 async function drinkBowl(){if(state!=='eat'||busy)return;const it=items.soup;if(it.left<=0)return;busy=true;
  const n=Math.min(3,it.left);const before=soupLevel,after=Math.max(0,(it.left-n)/it.portions);
- spoonOnTable=true;if(!tablePose)tablePose=solveSpoonTable();await moveSpoon(tablePose.pos,tablePose.rot,800,0.07);const p0=bowl.position.clone();camera.getWorldDirection(tmpV);const tgt=camera.position.clone().addScaledVector(tmpV,0.2).add(new THREE.Vector3(0,-0.1,0));
+ spoonOnTable=false;bowl.updateMatrixWorld(true);renge.updateMatrixWorld(true);const RL=new THREE.Matrix4().copy(bowl.matrixWorld).invert().multiply(renge.matrixWorld);const _rs=new THREE.Vector3();const carryR=()=>{bowl.updateMatrixWorld(true);new THREE.Matrix4().multiplyMatrices(bowl.matrixWorld,RL).decompose(renge.position,renge.quaternion,_rs);};const p0=bowl.position.clone();camera.getWorldDirection(tmpV);const tgt=camera.position.clone().addScaledVector(tmpV,0.2).add(new THREE.Vector3(0,-0.1,0));
  const level=(tilt,sl)=>{soup.rotation.x=-Math.PI/2-tilt+sl;soup.scale.y=soup.scale.x*Math.cos(tilt)*0.97;};
  clink(900,.08);
- await anim(950,k=>{const e=ease(k);bowl.position.lerpVectors(p0,tgt,e);const tilt=0.32*e;bowl.rotation.x=tilt;updateSoup();level(tilt,Math.sin(k*9)*0.05*(1-k));steamBoost=Math.max(steamBoost,.4);});
+ await anim(950,k=>{const e=ease(k);bowl.position.lerpVectors(p0,tgt,e);const tilt=0.32*e;bowl.rotation.x=tilt;carryR();updateSoup();level(tilt,Math.sin(k*9)*0.05*(1-k));steamBoost=Math.max(steamBoost,.4);});
  [0,450,900].forEach(d=>setTimeout(gulp,d+150));
- await anim(1300,k=>{const tilt=0.32+0.22*Math.sin(Math.min(1,k*1.4)*Math.PI/2);bowl.rotation.x=tilt;soupLevel=before+(after-before)*ease(k);updateSoup();level(tilt,Math.sin(k*14)*0.03);camDip=-0.006*Math.sin(k*Math.PI);});
+ await anim(1300,k=>{const tilt=0.32+0.22*Math.sin(Math.min(1,k*1.4)*Math.PI/2);bowl.rotation.x=tilt;carryR();soupLevel=before+(after-before)*ease(k);updateSoup();level(tilt,Math.sin(k*14)*0.03);camDip=-0.006*Math.sin(k*Math.PI);});
  camDip=0;const tilt1=bowl.rotation.x,p1=bowl.position.clone();
- await anim(950,k=>{const e=ease(k);bowl.position.lerpVectors(p1,p0,e);const tilt=tilt1*(1-e);bowl.rotation.x=tilt;updateSoup();level(tilt,Math.sin(k*10)*0.06*(1-k));});
- bowl.position.copy(p0);bowl.rotation.x=0;updateSoup();soup.rotation.x=-Math.PI/2;settle();if(soupLevel>0.001){spoonOnTable=false;restRenge();const rp=renge.position.clone(),rr=renge.rotation.clone();renge.position.copy(tablePose.pos);renge.rotation.copy(tablePose.rot);await moveSpoon(rp,rr,800,0.07);}restRenge();clink(600,.2);ripple(bowl.position.x,bowl.position.z,3);
+ await anim(950,k=>{const e=ease(k);bowl.position.lerpVectors(p1,p0,e);const tilt=tilt1*(1-e);bowl.rotation.x=tilt;carryR();updateSoup();level(tilt,Math.sin(k*10)*0.06*(1-k));});
+ bowl.position.copy(p0);bowl.rotation.x=0;updateSoup();soup.rotation.x=-Math.PI/2;settle();carryR();{const a=renge.position.clone(),qa=renge.quaternion.clone();restRenge();const b=renge.position.clone(),qb=renge.quaternion.clone();await anim(300,k=>{renge.position.lerpVectors(a,b,ease(k));renge.quaternion.slerpQuaternions(qa,qb,ease(k));});}restRenge();clink(600,.2);ripple(bowl.position.x,bowl.position.z,3);
  it.left-=n;for(let i=0;i<n;i++)bites.push(it.label);if(!order.includes(it.label))order.push(it.label);
  say(soupLevel<=0.001?'…どんぶりごと、飲み干した':'どんぶりから、ごくごく…あったまる');refreshBar();busy=false;if(Object.values(items).every(i=>i.left<=0))finish();}
-function headP(){return camCur.pos.clone();}
+function headP(){return camCur.pos.clone().add(new THREE.Vector3(0,-camDip-camLean*0.9,-camDip*0.8-camLean));}
 function headD(){return camCur.look.clone().sub(camCur.pos).normalize();}
 function mouthPos(){return headP().addScaledVector(headD(),0.13).add(new THREE.Vector3(0,-0.035,0));}
 function biteP(){return headP().addScaledVector(headD(),0.045).add(new THREE.Vector3(0,-0.028,0));}
@@ -634,7 +679,7 @@ async function eatMoyashi(obj){
   const hp=sm.map((p,i)=>{const a=Math.abs(i-gi)*L,f=i>=gi?phi:phi2;const sp=0.28+0.12*Math.sin(si*1.7);const h=V3(Math.cos(f)*(0.0025+sp*a),-0.94*a+0.0015*Math.sin(a*120),Math.sin(f)*(0.0025+sp*a));
    h.x+=Math.cos(f+1.57)*cw*a*a*6;h.z+=Math.sin(f+1.57)*cw*a*a*6;return h.add(jit);});
   // pick output points evenly: same count both states
-  const pick=A=>A.filter((_,i)=>i%4===0||i===N);const [g0,h0]=sproutGeo(pick(sm),s.r,s.head),[g1,h1]=sproutGeo(pick(hp),s.r,s.head);st.push(g0);sth.push(g1);if(h0){hd.push(h0);hdh.push(h1);}});
+  const pick=A=>A.filter((_,i)=>i%4===0||i===N);const [g0,h0]=sproutGeo(pick(sm),s.r,s.head,s.tail),[g1,h1]=sproutGeo(pick(hp),s.r,s.head,s.tail);st.push(g0);sth.push(g1);if(h0){hd.push(h0);hdh.push(h1);}});
  const mk=(a,b,mat)=>{const g=mergeGeometries(a),h=mergeGeometries(b);g.morphAttributes.position=[h.attributes.position];g.morphAttributes.normal=[h.attributes.normal];const m=new THREE.Mesh(g,mat);m.castShadow=true;m.frustumCulled=false;m.updateMorphTargets();return m;};
  const parts=[mk(st,sth,sproutMat)];if(hd.length)parts.push(mk(hd,hdh,sproutHeadMat));
  const pivot=new THREE.Group();pivot.position.copy(gw);scene.add(pivot);parts.forEach(p=>pivot.add(p));obj.visible=false;
@@ -658,7 +703,7 @@ function biteMat(m,U){const c=m.clone();c.onBeforeCompile=sh=>{sh.uniforms.uCut=
   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec2 aRest;varying vec2 vRest;').replace('#include <begin_vertex>','#include <begin_vertex>\nvRest=aRest;');
   sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uCut;uniform float uSeed;varying vec2 vRest;')
    .replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\n{float z=vRest.y;float j=0.0017*sin(z*820.+uSeed)+0.0011*sin(z*1930.+uSeed*2.1)+0.0007*sin(z*4410.+uSeed*3.3)+0.0004*sin(z*9100.+uSeed*1.3)+7.0*z*z;if(vRest.x>uCut+j)discard;}')
-   .replace('#include <color_fragment>','#include <color_fragment>\nif(!gl_FrontFacing){float f=0.86+0.14*sin(vRest.x*2600.+sin(vRest.y*700.)*2.);diffuseColor.rgb=vec3(0.80,0.56,0.47)*f;}');};
+   .replace('#include <color_fragment>','#include <color_fragment>\nif(!gl_FrontFacing){float f=0.9+0.1*sin(vRest.x*2600.+sin(vRest.y*700.)*2.);diffuseColor.rgb*=vec3(0.93,0.82,0.78)*f;}');};
  c.customProgramCacheKey=()=>'bite';return c;}
 async function eatChashu(obj,start,lift){
  obj.updateMatrixWorld(true);const g0=obj.geometry;g0.computeBoundingBox();const bb=g0.boundingBox;
@@ -673,9 +718,9 @@ async function eatChashu(obj,start,lift){
  const carry=new THREE.Mesh(g,mats);carry.castShadow=true;carry.frustumCulled=false;
  const Lb=xe-xg;const NT=64;const tab=[];{let X=0,Y=0;for(let i=0;i<=NT;i++){tab.push([X,Y]);}}
  let TH=0;const th=u=>TH*(1-(1-u)*(1-u));
- const bendPt=(x,y,z,o)=>{const s=x-xg;if(s<=0){o.set(x,y,z);return o;}const u=Math.min(1,s/Lb);// integrate
-  const n=Math.max(2,Math.ceil(u*24));let X=0,Y=0;for(let i=0;i<n;i++){const a=th((i+.5)/n*u);X+=Math.cos(a)*s/n;Y-=Math.sin(a)*s/n;}const a=th(u);o.set(xg+X+y*Math.sin(a),Y+y*Math.cos(a)-TH*2.2*z*z,z);return o;};
- const tmp=V3(0,0,0);const bend=T=>{TH=T;const a=P.array;for(let i=0;i<P.count;i++){bendPt(sg*base[i*3],base[i*3+1],base[i*3+2],tmp);a[i*3]=sg*tmp.x;a[i*3+1]=tmp.y;a[i*3+2]=tmp.z;}P.needsUpdate=true;g.computeVertexNormals();};
+ const TX=new Float32Array(NT+1),TY=new Float32Array(NT+1);const buildT=()=>{let X=0,Y=0;for(let i=0;i<NT;i++){const a=th((i+.5)/NT);X+=Math.cos(a)*Lb/NT;Y-=Math.sin(a)*Lb/NT;TX[i+1]=X;TY[i+1]=Y;}};
+ const bendPt=(x,y,z,o)=>{const s=x-xg;if(s<=0){o.set(x,y,z);return o;}const u=Math.min(1,s/Lb);const f=u*NT,i0=Math.min(NT-1,Math.floor(f)),fr=f-i0;let X=TX[i0]+(TX[i0+1]-TX[i0])*fr,Y=TY[i0]+(TY[i0+1]-TY[i0])*fr;if(s>Lb){const a1=th(1);X+=Math.cos(a1)*(s-Lb);Y-=Math.sin(a1)*(s-Lb);}const a=th(u);o.set(xg+X+y*Math.sin(a),Y+y*Math.cos(a)-TH*2.2*z*z,z);return o;};
+ const tmp=V3(0,0,0);const bend=T=>{TH=T;buildT();const a=P.array;for(let i=0;i<P.count;i++){bendPt(sg*base[i*3],base[i*3+1],base[i*3+2],tmp);a[i*3]=sg*tmp.x;a[i*3+1]=tmp.y;a[i*3+2]=tmp.z;}P.needsUpdate=true;g.computeVertexNormals();};
  // carry frame: pivot at grip; carry local = slice local translated so grip point is origin
  const pivot=new THREE.Group();scene.add(pivot);const inner=new THREE.Group();pivot.add(inner);inner.add(carry);carry.position.set(sg*xs/2*0.78,-bb.max.y,0);
  const wq=new THREE.Quaternion();obj.getWorldQuaternion(wq);obj.visible=false;pivot.position.copy(gW);
@@ -688,8 +733,8 @@ async function eatChashu(obj,start,lift){
  // shreds: little fibres torn at the bite edge that hang off it
  const shreds=[];
  const wFree=xc=>{bendPt(xc,0,0,tmp);const o=V3(sg*tmp.x,tmp.y,tmp.z);carry.localToWorld(o);return o;};
- const cuts=[xe*0.42,-xs*0.06,null];const bp=biteP();let G=lp.clone();
- for(let b=0;b<3;b++){const edge=b===0?xe:cuts[b-1];
+ const cuts=[xg+(xe-xg)*0.5,null];const bp=biteP();let G=lp.clone();
+ for(let b=0;b<2;b++){const edge=b===0?xe:cuts[b-1];
   // bring the free end to the mouth
   const hold=mouthPos();
   if(b===0){await anim(620,k=>{const e=ease(k);G=new THREE.Vector3().lerpVectors(lp,hold,e);holdAt(G,0);pivot.position.copy(G);bend(1.05+Math.sin(k*8)*0.05*(1-k));});}
@@ -721,30 +766,40 @@ async function sipSoup(it,idx){
  const before=soupLevel,after=Math.max(0,1-(idx+1)/it.portions);
  // held volume, expressed as depth above the lowest point of the bowl of the spoon when level
  const yawS=new THREE.Euler().setFromQuaternion(renge.quaternion,'YXZ').y;const qS=renge.quaternion.clone();
- renge.quaternion.setFromEuler(new THREE.Euler(0,yawS,0,'YXZ'));let cs=cupStats();const D0=(cs.lip-cs.ymin)*0.72;renge.quaternion.copy(qS);
- let D=D0;const poolAt=(surf)=>{cs=cupStats();let lv=cs.ymin+D;if(surf!==undefined)lv=Math.min(lv,surf-0.0004);if(lv>cs.lip-0.0006){const nd=cs.lip-0.0006-cs.ymin;if(nd<D-0.0004&&surf===undefined){dripFrom(V3(_cw[0].x,cs.lip,_cw[0].z));}D=Math.min(D,nd);lv=cs.ymin+D;}poolW.visible=lv>cs.ymin+0.0003;if(poolW.visible)setPool(lv);};
- poolW.visible=true;poolAt(surfY());
- // tilt up slightly under the surface so soup flows in (spoon stays put)
- await anim(260,k=>{poolAt(surfY());});
+ buildCav();let F=0;const F0=0.6;const _cv=new THREE.Vector3();
+ const cavY=()=>{const cup=renge.userData.cup;cup.updateMatrixWorld(true);const M=cup.matrixWorld;for(let i=0;i<CAV.P.length;i++){_cv.copy(CAV.P[i]).applyMatrix4(M);CAV.Y[i]=_cv.y;}};
+ const cavLevel=f=>{cavY();const Y=CAV.Y.slice().sort();return Y[Math.max(0,Math.min(Y.length-1,Math.floor(f*(Y.length-1))))];};
+ const cavFrac=l=>{cavY();let n=0;for(let i=0;i<CAV.Y.length;i++)if(CAV.Y[i]<l)n++;return n/CAV.Y.length;};
+ const poolAt=(surf)=>{let lv=cavLevel(F);if(surf!==undefined)lv=Math.min(lv,surf-0.0004);const cs=cupStats();lv=Math.min(lv,cs.lip-0.0006);poolW.visible=F>0.01&&lv>cs.ymin+0.0003;if(poolW.visible)setPool(lv);window.__poolF=F;};
+ const scoopF=()=>{F=Math.max(F,Math.min(F0,cavFrac(surfY()-0.0004)));};
+ poolW.visible=true;scoopF();poolAt(surfY());
+ await anim(300,k=>{scoopF();poolAt(surfY());});
  const up1=scP.clone();up1.y=Math.max(scP.y,surfY())+0.026;const inw=new THREE.Vector3(bowl.position.x-scP.x,0,bowl.position.z-scP.z).normalize().multiplyScalar(0.035);const up=up1.clone().add(inw);up.y+=0.045;
  const qL=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,yawS,0,'YXZ'));let dr=false;const sst=liftSteam.slice(0,3);sst.forEach((x,i)=>{x.visible=true;x.userData.t=i/3;x.material.opacity=0;});const spSteam=()=>sst.forEach((x,i)=>{x.userData.t=(x.userData.t+0.012)%1;const t=x.userData.t;x.position.set(renge.position.x+Math.sin(t*7+i)*0.006,renge.position.y+0.004+t*0.05,renge.position.z);x.scale.setScalar(0.02+t*0.035);x.material.opacity=0.13*Math.sin(t*Math.PI)*(window.__arrT?Math.max(.3,1-(performance.now()-__arrT)/240000):1);});
- await anim(320,k=>{const e=ease(k);renge.position.lerpVectors(scP,up1,e);renge.quaternion.slerpQuaternions(qS,qL,e*0.6);soupLevel=before+(after-before)*e;updateSoup();poolAt(surfY());spSteam();if(!dr&&k>.75){dr=true;cs=cupStats();dripFrom(V3(renge.position.x,cs.ymin-0.002,renge.position.z));}});
+ await anim(340,k=>{const e=ease(k);renge.position.lerpVectors(scP,up1,e);renge.quaternion.slerpQuaternions(qS,qL,e*0.6);soupLevel=before+(after-before)*e;updateSoup();if(renge.position.y<surfY()+0.004)scoopF();poolAt(surfY());spSteam();if(!dr&&k>.75){dr=true;const cs=cupStats();dripFrom(V3(renge.position.x,cs.ymin-0.002,renge.position.z));}});
+ if(F<0.2&&soupLevel>0.001)F=F0;const Fh=F;window.__poolHeld=Fh;
  const q1=renge.quaternion.clone();
- await anim(300,k=>{const e=ease(k);renge.position.lerpVectors(up1,up,e);renge.quaternion.slerpQuaternions(q1,qL,e);poolAt();spSteam();});
- // to the mouth: front edge (-z) toward the eater, level
- const hp=headP();const h=hp.clone().sub(up);h.y=0;h.normalize();const psi=Math.atan2(-h.x,-h.z);const qM=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,psi,0,'YXZ'));
- const mp=biteP().addScaledVector(h,-0.03).add(V3(0,-0.004,0));setTimeout(()=>slurp(.8,.55),300);
- await anim(720,k=>{const e=ease(k);renge.position.lerpVectors(up,mp,e);renge.quaternion.slerpQuaternions(qL,qM,e);poolAt();spSteam();if(k>.75)camDip=0.01*Math.sin((k-.75)/.25*Math.PI/2);});
- // gentle tilt: front edge lowers, soup drains into the mouth
- const qT=qM.clone().multiply(new THREE.Quaternion().setFromAxisAngle(V3(1,0,0),-0.56));const D1=D;const mpT=mp.clone().add(V3(0,0.006,0)).addScaledVector(h,0.006);
- await anim(1100,k=>{const e=ease(k);renge.quaternion.slerpQuaternions(qM,qT,e);renge.position.lerpVectors(mp,mpT,e);D=D1*(1-ease(Math.min(1,k*1.15)));poolAt();camDip=0.01;});
- await anim(450,k=>{const e=ease(k);renge.quaternion.slerpQuaternions(qT,qM,e);renge.position.lerpVectors(mpT,mp,e);});
+ await anim(320,k=>{const e=ease(k);renge.position.lerpVectors(up1,up,e);renge.quaternion.slerpQuaternions(q1,qL,e);poolAt();spSteam();});
+ // to the mouth like the reference: handle held at an angle, the wrist turns the bowl of the spoon toward the lips
+ const hp=headP();const h=hp.clone().sub(up);h.y=0;h.normalize();const psi=Math.atan2(-h.x,-h.z);
+ const wq=(yaw,pitch,roll)=>new THREE.Quaternion().setFromEuler(new THREE.Euler(pitch,yaw,roll,'YXZ'));
+ let dy=psi-yawS;while(dy>Math.PI)dy-=2*Math.PI;while(dy<-Math.PI)dy+=2*Math.PI;
+ const qM=wq(psi,-0.1,0);
+ const mp=biteP().addScaledVector(h,-0.03).add(V3(0,-0.004,0));setTimeout(()=>slurp(.9,.45),900);
+ await anim(950,k=>{const e=ease(k);const a=Math.min(1,k*1.15);const mid=up.clone().lerp(mp,e);mid.y+=Math.sin(Math.PI*e)*0.02;renge.position.copy(mid);
+  renge.quaternion.copy(wq(yawS+dy*ease(a),-0.1*e,0.3*Math.sin(Math.PI*e)));poolAt();spSteam();if(k>.75)camDip=0.01*Math.sin((k-.75)/.25*Math.PI/2);});
+ // slow tilt: the front edge lowers and only now the soup goes down
+ const mpT=mp.clone().add(V3(0,0.006,0)).addScaledVector(h,0.006);
+ await anim(1500,k=>{const e=ease(k);renge.quaternion.copy(wq(psi,-0.1-0.5*e,0));renge.position.lerpVectors(mp,mpT,e);F=Fh*(1-ease(Math.max(0,Math.min(1,(k-0.12)/0.8))));poolAt();camDip=0.01;});
+ F=0;await anim(450,k=>{const e=ease(k);renge.quaternion.copy(wq(psi,-0.6+0.5*e,0));renge.position.lerpVectors(mpT,mp,e);});
  sst.forEach(x=>x.visible=false);poolW.visible=false;if(ambNodes.steam)ambNodes.steam.gain.value=0.02*soupLevel;
- settle();if(soupLevel<=0.001)spoonOnTable=true;restRenge();const tp=renge.position.clone(),qr=renge.quaternion.clone();renge.position.copy(mp);renge.quaternion.copy(qM);
+ settle();spoonOnTable=false;restRenge();const tp=renge.position.clone(),qr=renge.quaternion.clone();renge.position.copy(mp);renge.quaternion.copy(qM);
  const above=tp.clone();above.y+=0.07;
  await anim(800,k=>{const e=ease(k);renge.position.lerpVectors(mp,above,e);renge.quaternion.slerpQuaternions(qM,qr,e);camDip=0.01*(1-e);});camDip=0;
  await anim(260,k=>renge.position.lerpVectors(above,tp,ease(k)));restRenge();clink(1800,.12);}
-
+let CAV=null;function buildCav(){if(CAV)return;const q=renge.quaternion.clone();renge.quaternion.identity();renge.updateMatrixWorld(true);const cup=renge.userData.cup;const W=cupWorld(),NP=renge.userData.cupNP;let lip=9;for(let i=0;i<W.length;i++)if(i%NP===NP-1)lip=Math.min(lip,W[i].y);
+ const inv=new THREE.Matrix4().copy(cup.matrixWorld).invert();const P=[];for(let i=0;i<W.length;i++){if(W[i].y>=lip)continue;for(let m=0;m<6;m++){const y=W[i].y+(lip-W[i].y)*(m+.5)/6;P.push(new THREE.Vector3(W[i].x,y,W[i].z).applyMatrix4(inv));}}
+ renge.quaternion.copy(q);renge.updateMatrixWorld(true);const st=Math.max(1,Math.ceil(P.length/360));const P2=P.filter((_,i)=>i%st===0);CAV={P:P2,Y:new Float32Array(P2.length)};}
 function bestFlash(){const f=document.createElement('div');f.style.cssText='position:fixed;inset:0;background:radial-gradient(circle,rgba(255,230,150,.35),rgba(255,200,80,0) 70%);pointer-events:none;z-index:3;transition:opacity 1.6s';document.body.appendChild(f);setTimeout(()=>f.style.opacity=0,300);setTimeout(()=>f.remove(),2200);
  if(AC){const t=AC.currentTime;[523,659,784,1047].forEach((fq,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=fq;g.gain.setValueAtTime(0,t+i*.09);g.gain.linearRampToValueAtTime(.06,t+i*.09+.05);g.gain.exponentialRampToValueAtTime(.0001,t+i*.09+1.2);o.connect(g).connect(master);o.start(t+i*.09);o.stop(t+i*.09+1.3);});}}
 function finish(){state='done';bar.style.display='none';camTarget={pos:new THREE.Vector3(0,0.33,0.18),look:new THREE.Vector3(0,0,-0.035)};
@@ -760,6 +815,7 @@ addEventListener('pointercancel',()=>down=null);
 ['contextmenu','gesturestart','dblclick'].forEach(ev=>addEventListener(ev,e=>e.preventDefault(),{passive:false}));
 document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault();},{passive:false});
 function tap(x,y){camera.updateMatrixWorld();ptr.set(x/innerWidth*2-1,-(y/innerHeight)*2+1);ray.setFromCamera(ptr,camera);
+ if(waterLv>0.01&&ray.intersectObject(glass,false).length){drinkWater();return;}
  const targets=[];bowl.traverse(o=>{if(o.isMesh&&o.userData.item)targets.push(o);});
  const vis=o=>{while(o){if(!o.visible)return false;o=o.parent;}return true;};
  const hits=ray.intersectObjects(targets,false).filter(h=>vis(h.object)&&items[h.object.userData.item].left>0);
@@ -777,12 +833,12 @@ function loop(){requestAnimationFrame(loop);[...ANIMS].forEach(a=>a.f());const n
  if(fpsAcc>2.5){const fps=fpsN/fpsAcc;if(fps<42&&tier>0){tier--;applyTier();}fpsAcc=0;fpsN=0;}
  if(state!=='arrive'){const ck=1-Math.exp(-dt*3);camCur.pos.lerp(camTarget.pos,ck);camCur.look.lerp(camTarget.look,ck);}
  const breath=Math.sin(t*1.6)*0.002;const p=camCur.pos.clone();p.y+=breath-peek*0.11;p.z-=peek*0.16;p.x+=Math.sin(yaw)*0.1;
- camera.position.copy(p);camera.position.y-=camDip;camera.position.z-=camDip*0.8;const lk=camCur.look.clone();lk.x+=-yaw*0.3;lk.y+=peek*-0.02;camera.lookAt(lk);camera.rotation.z+=Math.sin(t*.7)*0.002;
+ camera.position.copy(p);camera.position.y-=camDip+camLean*0.9;camera.position.z-=camDip*0.8+camLean;const lk=camCur.look.clone();lk.x+=-yaw*0.3;lk.y+=peek*-0.02;camera.lookAt(lk);camera.rotation.z+=Math.sin(t*.7)*0.002;
  if(window.__auditOn){const v=window.__audit();if(v.length){const W=window.__viol=window.__viol||{};v.forEach(x=>{const k=state+':'+x;if(!W[k])W['@'+k]=[renge.position.toArray().map(q=>+q.toFixed(4)),renge.rotation.toArray().slice(0,3).map(q=>+(+q).toFixed(2)),spoonOnTable,busy,hashi.position.toArray().map(q=>+q.toFixed(3)),hashi.rotation.toArray().slice(0,3).map(q=>+(+q).toFixed(2)),window.__curItem||'',+soupLevel.toFixed(2)].join(' ');W[k]=(W[k]||0)+1;});}}
  if(window.__camLock){const L=window.__camLock;camera.position.set(...L.pos);camera.lookAt(...L.look);if(camera.fov!==L.fov){camera.fov=L.fov;camera.updateProjectionMatrix();}}
  steamBoost=Math.max(0,steamBoost-dt*0.08);ripples.forEach(r=>{if(r.t>=1)return;r.t+=dt*0.9;const k=Math.max(0,r.t);r.m.scale.setScalar(0.01+k*0.07);r.m.material.opacity=r.t<0?0:0.35*(1-k);r.m.position.y=soupY()+0.0012;if(r.t>=1)r.m.visible=false;});
  const y=soupY();steams.forEach((s,si)=>{const u=s.userData;u.t+=dt*(0.1+steamBoost*0.08);if(u.t>1){u.t=0;u.a=R(0,6.28);u.r=R(0,.09);}const k=u.t;
-  const curl=k*k*0.05;s.position.set(Math.cos(u.a)*u.r+Math.sin(t*.8+k*6+si)*0.012+Math.cos(t*.5+si)*curl,y+0.015+k*(0.2+steamBoost*0.1),Math.sin(u.a)*u.r+Math.sin(t*.6+si)*curl);s.scale.setScalar((si%2?0.04:0.07)+k*(si%2?0.09:0.16));s.material.rotation=u.rot*k*2+Math.sin(t*.3+si)*.3;const heat=Math.max(0.3,1-(now-(window.__arrT||now))/240000);s.material.opacity=(0.17+steamBoost*0.1)*heat*Math.sin(k*Math.PI)*(0.2+0.8*soupLevel)*(bowl.visible?1:0);});
+  const curl=k*k*0.05;s.position.set(Math.cos(u.a)*u.r+Math.sin(t*.8+k*6+si)*0.012+Math.cos(t*.5+si)*curl,y+0.015+k*(0.2+steamBoost*0.1),Math.sin(u.a)*u.r+Math.sin(t*.6+si)*curl);s.scale.setScalar((si%2?0.04:0.07)+k*(si%2?0.09:0.16));s.material.rotation=u.rot*k*2+Math.sin(t*.3+si)*.3;const heat=Math.max(0.3,1-(now-(window.__arrT||now))/240000);s.material.opacity=(0.2+steamBoost*0.1)*heat*Math.sin(k*Math.PI)*(0.2+0.8*soupLevel)*(bowl.visible?1:0);});
  drips.forEach(d=>{if(!d.on)return;d.delay-=dt;if(d.delay>0)return;d.v-=9.8*dt*0.3;d.m.position.y+=d.v*dt;d.m.position.x+=(d.vx||0)*dt;d.m.position.z+=(d.vz||0)*dt;{const inB=Math.hypot(d.m.position.x-bowl.position.x,d.m.position.z-bowl.position.z)<innerR(y)-0.002&&bowl.visible;const fy=inB?bowl.position.y+y:0.0015;if(d.m.position.y<fy){d.on=false;d.m.visible=false;if(inB)ripple(d.m.position.x,d.m.position.z,1);}}});
  soupMat.normalMap.offset.set(Math.sin(t*.15)*0.01,t*0.002);
  renderer.render(scene,camera);}
@@ -790,5 +846,5 @@ function resize(){const w=innerWidth,h=innerHeight,portrait=h>w;camera.aspect=w/
 addEventListener('resize',resize);addEventListener('orientationchange',()=>setTimeout(resize,200));
 applyTier();updateSoup();restHashi();restRenge();loop();
 window.__why=()=>{const L=topMeshes();const r=[];L.forEach((m,i)=>{const u=m.userData;const p=m.position.clone();m.position.set(u.baseX,u.baseY,u.baseZ);m.updateMatrixWorld(true);bowl.updateMatrixWorld(true);_bI.copy(bowl.matrixWorld).invert();r.push([m.name,topBowlHit(m),L.slice(0,i).filter(o=>meshOverlap(m,o)).map(o=>o.name).join('/')]);m.position.copy(p);m.updateMatrixWorld(true);});return r;};window.__settle=()=>{try{settle();}catch(e){return String(e)}return menmas.map(m=>[m.position.toArray().map(v=>+v.toFixed(3)),topBowlHit(m),m.parent.name,m.parent.position.toArray()]);};window.__dbgScoop=(lv)=>{soupLevel=lv;updateSoup();const fl=Math.max(floorY(),soupY()-0.0095);const sp=spoonInBowlPose(fl);if(!sp)return 'none';renge.position.copy(sp.pos).add(bowl.position);renge.rotation.copy(sp.rot);return [lv,fl.toFixed(4),sp.c.d.toFixed(3),sp.c.th.toFixed(2),sp.pos.y.toFixed(4),__audit().join()].join(' ');};
-window.__moyashiW=()=>{const v=new THREE.Vector3();moyashiG.getWorldPosition(v);return v.toArray();};window.__game={get state(){return state},get busy(){return busy},items,eat,get soupLevel(){return soupLevel},get order(){return order},get tier(){return tier},tap,camera,drink:drinkBowl,get mode(){return mode},setupChashu,chashus,menmas,kani,bowl,renge,toppingsRoot,THREE,restRenge};
+window.__moyashiW=()=>{const v=new THREE.Vector3();moyashiG.getWorldPosition(v);return v.toArray();};window.__game={get state(){return state},get busy(){return busy},items,eat,get soupLevel(){return soupLevel},get order(){return order},get tier(){return tier},tap,camera,drink:drinkBowl,drinkWater,get waterLv(){return waterLv},get mode(){return mode},setupChashu,chashus,menmas,kani,bowl,renge,toppingsRoot,THREE,restRenge};
 </script></body></html>
