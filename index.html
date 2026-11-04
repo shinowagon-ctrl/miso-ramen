@@ -195,7 +195,7 @@ for(let p=0;p<5;p++){const geos=[];
 addItem('men','麺',noodleGroups,'hashi',5);
 
 // bean sprouts: neat mound, curved translucent stems w/ yellow heads, 3 layers
-const sproutMat=new THREE.MeshPhysicalMaterial({color:0xfdf8ea,roughness:.25,transmission:.3,emissive:0x2a2418,thickness:.004,clearcoat:.6,sheen:.3});
+const sproutMat=new THREE.MeshPhysicalMaterial({color:0xefe7d2,roughness:.3,transmission:.5,emissive:0x1c1810,thickness:.003,clearcoat:.5,transparent:true,opacity:.9});
 const sproutHeadMat=new THREE.MeshPhysicalMaterial({color:0xe6dca6,roughness:.5,clearcoat:.15,transmission:.15,thickness:.002});
 const moyashiG=new THREE.Group();moyashiG.position.set(-0.008,0,-0.012);toppingsRoot.add(moyashiG);
 const sproutLayers=[];
@@ -204,8 +204,8 @@ for(let L=0;L<3;L++){const stems=[],heads=[];const N=32;
   const dir=R(0,6.28),len=R(.035,.055),bend=R(-.012,.012),lift=R(-.004,.006);
   const c=new THREE.Vector3(Math.cos(a)*r,baseY,Math.sin(a)*r);const d=new THREE.Vector3(Math.cos(dir),0,Math.sin(dir));const nrm=new THREE.Vector3(-d.z,0,d.x);
   const p0=c.clone().addScaledVector(d,-len/2),p1=c.clone().addScaledVector(nrm,bend).add(new THREE.Vector3(0,lift+0.003,0)),p2=c.clone().addScaledVector(d,len/2).add(new THREE.Vector3(0,lift,0));
-  const curve=new THREE.QuadraticBezierCurve3(p0,p1,p2);const tg=new THREE.TubeGeometry(curve,10,R(.0014,.0019),5);stems.push(tg);
-  if(Math.random()<.12){const s=new THREE.SphereGeometry(0.00115,6,5);s.scale(1,.85,1.6);s.translate(p2.x,p2.y,p2.z);heads.push(s);}}
+  const curve=new THREE.QuadraticBezierCurve3(p0,p1,p2);const tg=new THREE.TubeGeometry(curve,10,R(.0009,.0012),5);stems.push(tg);
+  if(Math.random()<.12){const tn=curve.getTangent(1).normalize();const s=new THREE.SphereGeometry(0.0013,8,6);s.scale(1,1,1.5);const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1),tn);s.applyQuaternion(q);const hp=p2.clone().addScaledVector(tn,0.0008);s.translate(hp.x,hp.y,hp.z);heads.push(s);}} // head sits on stem tip, overlapping it
  const lg=new THREE.Group();lg.add(new THREE.Mesh(mergeGeometries(stems),sproutMat));if(heads.length)lg.add(new THREE.Mesh(mergeGeometries(heads),sproutHeadMat));moyashiG.add(lg);sproutLayers.push(lg);}
 sproutLayers.reverse(); // eat top layer first
 addItem('moyashi','もやし',sproutLayers,'hashi',3);
@@ -490,8 +490,8 @@ function obaPose(){obaUp.rotation.x=obaLean;oba.updateMatrixWorld(true);
 function obaIdle(t){if(state==='arrive')return;obaUp.userData.head.rotation.z=Math.sin(t*0.0011)*0.05;obaUp.userData.head.rotation.x=0.12+Math.sin(t*0.0007)*0.03;}
 function arrive(){resetBowl();bowl.visible=true;renge.visible=true;state='arrive';steamBoost=1;ripple(0,0,3);const t0=performance.now();const p0=camCur.pos.clone(),l0=camCur.look.clone();
  const step=()=>{const k=Math.min(1,(performance.now()-t0)/3400);const e=1-Math.pow(1-k,3);obaReach=1;obaLean=0.15+0.45*e;bowl.position.set(0,FOOT+0.12*(1-e)+Math.sin(k*Math.PI)*0.02,-0.45*(1-e));restRenge();
-  {const SVp=new THREE.Vector3(0,0.46,0.72),SVl=new THREE.Vector3(0,0.34,-0.55);if(k<0.6){const e1=THREE.MathUtils.smoothstep(k,0,0.25);camCur.pos.lerpVectors(p0,SVp,e1);camCur.look.lerpVectors(l0,SVl,e1);}else{const e2=THREE.MathUtils.smoothstep(k,0.6,1);camCur.pos.lerpVectors(SVp,camRest.pos,e2);camCur.look.lerpVectors(SVl,camRest.look,e2);}} // camera arrives exactly with the bowl → no early-tap misses
-  if(k<1)requestAnimationFrame(step);else{const r0=performance.now();const back=()=>{const q=Math.min(1,(performance.now()-r0)/900);const eq=q*q*(3-2*q);obaReach=1-eq;obaLean=0.6*(1-eq);if(q<1)requestAnimationFrame(back);};setTimeout(back,350);camTarget=camRest;settle();restRenge();clink(600,.25);say('「お待ちどうさま！」');state='eat';window.__eatT=performance.now();bar.style.display='flex';$('hint').textContent=isMobile?'タップで食べる／ドラッグでのぞく':'クリックで食べる・ドラッグでのぞき込む';}};step();}
+  {const SVp=new THREE.Vector3(0.12,0.42,0.62),SVl=new THREE.Vector3(0,0.24,-0.5);const e1=THREE.MathUtils.smoothstep(k,0,0.3);camCur.pos.lerpVectors(p0,SVp,e1);camCur.look.lerpVectors(l0,SVl,e1);} // serve view: obasan + bowl both in frame // camera arrives exactly with the bowl → no early-tap misses
+  if(k<1)requestAnimationFrame(step);else{const r0=performance.now();const back=()=>{const q=Math.min(1,(performance.now()-r0)/900);const eq=q*q*(3-2*q);obaReach=1-eq;obaLean=0.6*(1-eq);if(q<1)requestAnimationFrame(back);};setTimeout(back,1400);camTarget={pos:camCur.pos.clone(),look:camCur.look.clone()};settle();restRenge();clink(600,.25);say('「お待ちどうさま！」');window.__serveT=performance.now();setTimeout(()=>{camTarget=camRest;setTimeout(()=>{state='eat';window.__eatT=performance.now();},900);},2400);bar.style.display='flex';$('hint').textContent=isMobile?'タップで食べる／ドラッグでのぞく':'クリックで食べる・ドラッグでのぞき込む';}};step();}
 $('againBtn').onclick=()=>{$('ovEnd').classList.add('hide');camCur.pos.copy(camFar.pos);camCur.look.copy(camFar.look);arrive();};
 
 // ---------- eating ----------
