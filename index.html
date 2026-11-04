@@ -39,7 +39,7 @@ canvas{display:block;touch-action:none}
 <div id="msg"></div>
 <div id="bar"></div>
 <div class="ov" id="ovEnter"><h1>あの一杯</h1><p>のれんをくぐると、味噌の香り。<br>カウンター席が空いている。</p><button class="btn" id="enterBtn">のれんをくぐる</button></div>
-<div class="ov hide" id="ovNin"><p style="font-size:24px">「いらっしゃい、何人？」</p><button class="btn" id="ninBtn">１人</button></div>
+<div class="ov hide" id="ovNin" style="background:linear-gradient(rgba(18,10,4,0) 45%,rgba(18,10,4,.7));justify-content:flex-end;padding-bottom:12vh"><p style="font-size:24px">「いらっしゃい、何人？」</p><button class="btn" id="ninBtn">１人</button></div>
 <div class="ov hide" id="ovMenu"><p>「何にします？」</p>
 <div id="menu"><div class="tan" data-m="miso">味噌ラーメン<small>おすすめ</small></div><div class="tan" data-m="chashu">味噌チャーシュー<small>冷たいチャーシュー８枚</small></div></div>
 <p style="font-size:13px">短冊をえらんでください</p></div>
@@ -196,7 +196,7 @@ addItem('men','麺',noodleGroups,'hashi',5);
 
 // bean sprouts: neat mound, curved translucent stems w/ yellow heads, 3 layers
 const sproutMat=new THREE.MeshPhysicalMaterial({color:0xfdf8ea,roughness:.25,transmission:.3,emissive:0x2a2418,thickness:.004,clearcoat:.6,sheen:.3});
-const sproutHeadMat=new THREE.MeshPhysicalMaterial({color:0xf1e8c4,roughness:.45,clearcoat:.2});
+const sproutHeadMat=new THREE.MeshPhysicalMaterial({color:0xe6dca6,roughness:.5,clearcoat:.15,transmission:.15,thickness:.002});
 const moyashiG=new THREE.Group();moyashiG.position.set(-0.008,0,-0.012);toppingsRoot.add(moyashiG);
 const sproutLayers=[];
 for(let L=0;L<3;L++){const stems=[],heads=[];const N=32;
@@ -205,7 +205,7 @@ for(let L=0;L<3;L++){const stems=[],heads=[];const N=32;
   const c=new THREE.Vector3(Math.cos(a)*r,baseY,Math.sin(a)*r);const d=new THREE.Vector3(Math.cos(dir),0,Math.sin(dir));const nrm=new THREE.Vector3(-d.z,0,d.x);
   const p0=c.clone().addScaledVector(d,-len/2),p1=c.clone().addScaledVector(nrm,bend).add(new THREE.Vector3(0,lift+0.003,0)),p2=c.clone().addScaledVector(d,len/2).add(new THREE.Vector3(0,lift,0));
   const curve=new THREE.QuadraticBezierCurve3(p0,p1,p2);const tg=new THREE.TubeGeometry(curve,10,R(.0014,.0019),5);stems.push(tg);
-  if(Math.random()<.15){const s=new THREE.SphereGeometry(0.0015,6,5);s.scale(1,.8,1.4);s.translate(p2.x,p2.y,p2.z);heads.push(s);}}
+  if(Math.random()<.12){const s=new THREE.SphereGeometry(0.00115,6,5);s.scale(1,.85,1.6);s.translate(p2.x,p2.y,p2.z);heads.push(s);}}
  const lg=new THREE.Group();lg.add(new THREE.Mesh(mergeGeometries(stems),sproutMat));if(heads.length)lg.add(new THREE.Mesh(mergeGeometries(heads),sproutHeadMat));moyashiG.add(lg);sproutLayers.push(lg);}
 sproutLayers.reverse(); // eat top layer first
 addItem('moyashi','もやし',sproutLayers,'hashi',3);
@@ -250,24 +250,24 @@ const menmas=[];[[-0.06,0.018,0.55],[-0.064,0.036,0.35],[-0.044,0.052,0.75]].for
  const m=new THREE.Mesh(g,menmaMat);m.position.set(x,S+0.006+i*0.0016,z);m.rotation.set(R(-.12,.12),ry+Math.PI/2*0.9,R(-.08,.08));m.name='menma'+i;toppingsRoot.add(m);menmas.push(m);});
 addItem('menma','メンマ',menmas,'hashi',3);
 
-// chashu: cold pork shoulder loin (kata-rosu) slices 8–10mm thick, lean with marbled fat seams (photo texture), thin braised edge, irregular outline
-function mkSlice(rx,rz,th,seed){const NS=44,RF=[0,.22,.42,.6,.75,.87,.95,1],h=th/2;const f=a=>1+0.09*Math.sin(3*a+seed)+0.06*Math.sin(5*a+seed*2.3)+0.03*Math.sin(7*a+seed*1.7)+0.02*Math.sin(11*a+seed);
+// chashu: cold pork shoulder loin (kata-rosu) slices 6–8mm thick, lean with marbled fat seams (photo texture), thin braised edge, irregular outline
+function mkSlice(rx,rz,th,seed){const NS=96,RF=[0,.22,.42,.6,.75,.87,.95,1],h=th/2;const NB=24+Math.floor((seed*7)%9),bump=[];for(let q=0;q<NB;q++){const u=Math.sin(seed*91.7+q*12.9898)*43758.5453;bump.push((u-Math.floor(u))*2-1);}const jag=a=>{const t=(a/(Math.PI*2)*NB%NB+NB)%NB,i0=Math.floor(t),fr=t-i0;return bump[i0]*(1-fr)+bump[(i0+1)%NB]*fr;};const f=a=>0.97+0.06*Math.sin(2*a+seed)+0.045*Math.sin(3*a+seed*2.3)+0.03*Math.sin(5*a+seed*1.7)+0.025*Math.sin(9*a+seed*3.1)+0.018*Math.sin(17*a+seed*.7)+0.035*jag(a);
  const pos=[],uv=[],col=[],idx=[];const edgeC=new THREE.Color(0x7a5236),white=new THREE.Color(1,1,1);
  const vtx=(x,y,z,u,v,c)=>{pos.push(x,y,z);uv.push(u,v);col.push(c.r,c.g,c.b);};
  const cap=sy=>{const base=pos.length/3;for(let j=0;j<RF.length;j++)for(let i=0;i<=NS;i++){const a=i/NS*Math.PI*2,k=RF[j]*f(a);const x=Math.cos(a)*rx*k,z=Math.sin(a)*rz*k;const c=white.clone().lerp(edgeC,THREE.MathUtils.smoothstep(RF[j],.8,1));
-   const dome=(1-RF[j]*RF[j])*0.0006;vtx(x,sy*(h+dome)+Math.sin(x*140+seed)*0.0002,z,x/(2*rx*1.12)+.5,z/(2*rz*1.12)+.5,c);}
+   const dome=(1-RF[j]*RF[j])*0.0006;vtx(x,sy*(h+dome+(x/rx)*0.0003*Math.sin(seed)+(z/rz)*0.00025*Math.cos(seed*1.3))+Math.sin(x*140+seed)*0.0002+Math.sin(z*230+seed*2)*0.00015,z,x/(2*rx*1.12)+.5,z/(2*rz*1.12)+.5,c);}
   for(let j=0;j<RF.length-1;j++)for(let i=0;i<NS;i++){const a=base+j*(NS+1)+i,b=a+1,c=a+NS+1,d=c+1;sy>0?idx.push(a,c,b,b,c,d):idx.push(a,b,c,b,d,c);}};
  cap(1);cap(-1);const capN=idx.length;
- const side=pos.length/3;for(let r=0;r<3;r++)for(let i=0;i<=NS;i++){const a=i/NS*Math.PI*2,k=f(a)*(r===1?1:0.975);vtx(Math.cos(a)*rx*k,h*(1-r),Math.sin(a)*rz*k,i/NS*4,r/2,edgeC);}
+ const side=pos.length/3;for(let r=0;r<3;r++)for(let i=0;i<=NS;i++){const a=i/NS*Math.PI*2,k=f(a)*(r===1?1:0.975);{const cx=Math.cos(a)*rx*k,cz=Math.sin(a)*rz*k,hh=h+(Math.cos(a)*k)*0.0003*Math.sin(seed)+(Math.sin(a)*k)*0.00025*Math.cos(seed*1.3);vtx(cx,hh*(1-r),cz,i/NS*4,r/2,edgeC);}}
  for(let r=0;r<2;r++)for(let i=0;i<NS;i++){const a=side+r*(NS+1)+i,b=a+1,c=a+NS+1,d=c+1;idx.push(a,b,c,b,d,c);}
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.setIndex(idx);
  g.addGroup(0,capN,0);g.addGroup(capN,idx.length-capN,1);g.computeVertexNormals();
- g.userData.inside=p=>{if(Math.abs(p.y)>h+0.0006)return false;const u=p.x/rx,v=p.z/rz;return Math.hypot(u,v)<f(Math.atan2(v,u))*0.985;};return g;}
+ g.userData.inside=p=>{if(Math.abs(p.y)>h+0.0009)return false;const u=p.x/rx,v=p.z/rz;return Math.hypot(u,v)<f(Math.atan2(v,u))*0.985;};return g;}
 const chashuEdge=new THREE.MeshPhysicalMaterial({color:0x6a452c,roughness:.75,normalMap:glazeN,normalScale:new THREE.Vector2(1.2,1.2),side:2});
 const chashuN=normalFrom(noiseCanvas(256,256,2500,.6,2.2),1);
 const chashus=[];
 const CH_HOME=[[-0.036,0.046,0.1,0.35],[-0.002,0.058,-0.08,-0.15],[0.03,0.042,0.08,-0.55],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
-CH_HOME.forEach(([x,z,tilt,ry],i)=>{const g=mkSlice(0.03*R(.92,1.06),0.024*R(.92,1.08),R(.008,.0095),i*1.9+0.7);
+CH_HOME.forEach(([x,z,tilt,ry],i)=>{const g=mkSlice(0.03*R(.92,1.06),0.024*R(.92,1.08),R(.0062,.0078),i*1.9+0.7);
  const t=ptex('chashu');t.wrapS=t.wrapT=THREE.MirroredRepeatWrapping;t.rotation=i*1.3;t.center.set(.5,.5);t.repeat.set(.9,.9);t.offset.set(R(-.05,.05),R(-.05,.05));
  const cap=new THREE.MeshPhysicalMaterial({map:t,vertexColors:true,color:0xffffff,normalMap:chashuN,normalScale:new THREE.Vector2(.25,.25),roughness:.55,clearcoat:.15,clearcoatRoughness:.5,sheen:.5,sheenRoughness:.6,sheenColor:new THREE.Color(0xffe8e2),side:2});
  const m=new THREE.Mesh(g,[cap,chashuEdge]);m.name='chashu'+i;m.position.set(x,S+0.006+i*0.002,z);m.rotation.set(-0.3+tilt,ry,tilt*.4);toppingsRoot.add(m);m.userData.home=[m.position.clone(),m.rotation.clone()];chashus.push(m);});
@@ -452,13 +452,13 @@ bowl.position.set(0,FOOT,-0.45);bowl.visible=false;renge.visible=false;
 function resetBowl(){soupLevel=1;Object.values(items).forEach(it=>{it.left=it.portions;it.objs.forEach(o=>o.visible=true);});order=[];bites=[];updateSoup();spoonOnTable=false;settle();restHashi();restRenge();buildBar();}
 $('enterBtn').onclick=()=>{audioInit();$('ovEnter').classList.add('hide');setTimeout(()=>$('ovNin').classList.remove('hide'),700);};
 $('ninBtn').onclick=()=>{$('ovNin').classList.add('hide');say('「カウンターへどうぞ」');camTarget=camFar;setTimeout(()=>$('ovMenu').classList.remove('hide'),2200);};
-document.querySelectorAll('.tan[data-m]').forEach(el=>el.onclick=()=>{const md=el.dataset.m;setupChashu(md);$('ovMenu').classList.add('hide');say(md==='chashu'?'「味噌チャーシューひとつ！」':'「味噌ひとつ！」');state='wait';kitchen(3.2);setTimeout(arrive,3300);});
+document.querySelectorAll('.tan[data-m]').forEach(el=>el.onclick=()=>{const md=el.dataset.m;setupChashu(md);$('ovMenu').classList.add('hide');say(md==='chashu'?'「味噌チャーシューね！ちょっと待っててね！」':'「味噌ラーメンね！ちょっと待っててね！」');state='wait';kitchen(3.2);setTimeout(arrive,3300);});
 // ---------- obasan (simple, warm older woman behind the counter) ----------
 const oba=new THREE.Group();oba.position.set(0.0,0,-0.88);scene.add(oba);
 const obaUp=new THREE.Group();oba.add(obaUp); // upper body pivots at waist for leaning
 obaUp.position.y=0.0;{const L=new THREE.PointLight(0xffd9b0,1.2,1.6,1.5);L.position.set(0,0.75,-0.45);oba.add(L);}
 {const M=(c,r=.8)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
- const skin=M(0xe8bf9c,.7),shirt=M(0x6b4a5e),apron=M(0xf3efe6,.9),hair=M(0x9c968f,.85),dark=M(0x2a1d16,.5),cheek=new THREE.MeshStandardMaterial({color:0xe59a8a,roughness:.8,transparent:true,opacity:.55});
+ const skin=M(0xe8bf9c,.7),shirt=M(0x6b4a5e),apron=M(0xf3efe6,.9),hair=M(0x15110f,.7),dark=M(0x2a1d16,.5),cheek=new THREE.MeshStandardMaterial({color:0xe59a8a,roughness:.8,transparent:true,opacity:.55});
  const add=(g,m,x,y,z,p=obaUp)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.castShadow=true;p.add(o);return o;};
  const legs=add(new THREE.CylinderGeometry(0.15,0.16,0.5,20),shirt,0,-0.38,0,oba);
  add(new THREE.CylinderGeometry(0.135,0.16,0.42,24),shirt,0,0.21,0);           // torso (cardigan)
@@ -468,12 +468,13 @@ obaUp.position.y=0.0;{const L=new THREE.PointLight(0xffd9b0,1.2,1.6,1.5);L.posit
  add(new THREE.CylinderGeometry(0.035,0.04,0.05,12),skin,0,0.47,0);            // neck
  const head=new THREE.Group();head.position.set(0,0.565,0.01);obaUp.add(head);
  add(new THREE.SphereGeometry(0.078,28,20),skin,0,0,0,head).scale.set(1,1.08,.95);
- const hc=add(new THREE.SphereGeometry(0.083,28,16,0,Math.PI*2,0,Math.PI*0.52),hair,0,0.006,-0.006,head);hc.rotation.x=-0.35; // grey hair
- add(new THREE.SphereGeometry(0.036,16,12),hair,0,0.06,-0.07,head);            // bun
+ const hc=add(new THREE.SphereGeometry(0.083,28,16,0,Math.PI*2,0,Math.PI*0.52),hair,0,0.006,-0.006,head);hc.rotation.x=-0.35; // black hair base
+ for(let q=0;q<70;q++){const th=Math.random()*Math.PI*2,ph=Math.random()*1.25;const dir=new THREE.Vector3(Math.sin(ph)*Math.cos(th),Math.cos(ph),Math.sin(ph)*Math.sin(th));if(dir.z>0.55&&dir.y<0.55)continue; // keep face clear
+  const r=0.084+Math.random()*0.012;add(new THREE.SphereGeometry(0.019+Math.random()*0.008,10,8),hair,dir.x*r,0.012+dir.y*r*1.02,-0.008+dir.z*r,head);} // short perm curls
  // gentle smiling eyes (arcs), smile, rosy cheeks
  const arc=r=>new THREE.TorusGeometry(r,0.0028,6,14,Math.PI);
  [-0.027,0.027].forEach(x=>{add(arc(0.011),dark,x,0.012,0.073,head);add(new THREE.SphereGeometry(0.014,12,8),cheek,x*1.45,-0.012,0.064,head).scale.set(1,.7,.4);});
- const sm=add(arc(0.016),dark,0,-0.03,0.072,head);sm.rotation.z=Math.PI;
+ const lip=new THREE.MeshStandardMaterial({color:0xe0457b,roughness:.35});const sm=add(new THREE.TorusGeometry(0.014,0.0042,8,16,Math.PI),lip,0,-0.03,0.07,head);sm.rotation.z=Math.PI;add(new THREE.SphereGeometry(0.009,10,8),lip,0,-0.041,0.071,head).scale.set(1.3,.55,.6); // pink lipstick
  obaUp.userData.head=head;}
 // arms: drawn as capsules from shoulder to hand each frame
 const obaArmMat=new THREE.MeshStandardMaterial({color:0x6b4a5e,roughness:.8}),obaHandMat=new THREE.MeshStandardMaterial({color:0xe8bf9c,roughness:.7});
@@ -488,9 +489,9 @@ function obaPose(){obaUp.rotation.x=obaLean;oba.updateMatrixWorld(true);
   const d=_h.clone().sub(_s),L=d.length();a.position.copy(_s).addScaledVector(d,.5);a.scale.set(1,L,1);a.quaternion.setFromUnitVectors(_up,d.normalize());});}
 function obaIdle(t){if(state==='arrive')return;obaUp.userData.head.rotation.z=Math.sin(t*0.0011)*0.05;obaUp.userData.head.rotation.x=0.12+Math.sin(t*0.0007)*0.03;}
 function arrive(){resetBowl();bowl.visible=true;renge.visible=true;state='arrive';steamBoost=1;ripple(0,0,3);const t0=performance.now();const p0=camCur.pos.clone(),l0=camCur.look.clone();
- const step=()=>{const k=Math.min(1,(performance.now()-t0)/2200);const e=1-Math.pow(1-k,3);obaReach=1;obaLean=0.15+0.45*e;bowl.position.set(0,FOOT+0.12*(1-e)+Math.sin(k*Math.PI)*0.02,-0.45*(1-e));restRenge();
-  camCur.pos.lerpVectors(p0,camRest.pos,e);camCur.look.lerpVectors(l0,camRest.look,e); // camera arrives exactly with the bowl → no early-tap misses
-  if(k<1)requestAnimationFrame(step);else{const r0=performance.now();const back=()=>{const q=Math.min(1,(performance.now()-r0)/900);const eq=q*q*(3-2*q);obaReach=1-eq;obaLean=0.6*(1-eq);if(q<1)requestAnimationFrame(back);};setTimeout(back,350);camTarget=camRest;settle();restRenge();clink(600,.25);say('「はい、お待たせ。」');state='eat';bar.style.display='flex';$('hint').textContent=isMobile?'タップで食べる／ドラッグでのぞく':'クリックで食べる・ドラッグでのぞき込む';}};step();}
+ const step=()=>{const k=Math.min(1,(performance.now()-t0)/3400);const e=1-Math.pow(1-k,3);obaReach=1;obaLean=0.15+0.45*e;bowl.position.set(0,FOOT+0.12*(1-e)+Math.sin(k*Math.PI)*0.02,-0.45*(1-e));restRenge();
+  {const SVp=new THREE.Vector3(0,0.46,0.72),SVl=new THREE.Vector3(0,0.34,-0.55);if(k<0.6){const e1=THREE.MathUtils.smoothstep(k,0,0.25);camCur.pos.lerpVectors(p0,SVp,e1);camCur.look.lerpVectors(l0,SVl,e1);}else{const e2=THREE.MathUtils.smoothstep(k,0.6,1);camCur.pos.lerpVectors(SVp,camRest.pos,e2);camCur.look.lerpVectors(SVl,camRest.look,e2);}} // camera arrives exactly with the bowl → no early-tap misses
+  if(k<1)requestAnimationFrame(step);else{const r0=performance.now();const back=()=>{const q=Math.min(1,(performance.now()-r0)/900);const eq=q*q*(3-2*q);obaReach=1-eq;obaLean=0.6*(1-eq);if(q<1)requestAnimationFrame(back);};setTimeout(back,350);camTarget=camRest;settle();restRenge();clink(600,.25);say('「お待ちどうさま！」');state='eat';window.__eatT=performance.now();bar.style.display='flex';$('hint').textContent=isMobile?'タップで食べる／ドラッグでのぞく':'クリックで食べる・ドラッグでのぞき込む';}};step();}
 $('againBtn').onclick=()=>{$('ovEnd').classList.add('hide');camCur.pos.copy(camFar.pos);camCur.look.copy(camFar.look);arrive();};
 
 // ---------- eating ----------
@@ -600,10 +601,10 @@ function finish(){state='done';bar.style.display='none';camTarget={pos:new THREE
 
 // ---------- input (pointer events; no long-press, no pinch zoom) ----------
 const ray=new THREE.Raycaster(),ptr=new THREE.Vector2();let down=null;
-renderer.domElement.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY,p:peek,yw:yaw,moved:false};});
+renderer.domElement.addEventListener('pointerdown',e=>{if(state!=='eat'||performance.now()-(window.__eatT||0)<300){down=null;return;}down={x:e.clientX,y:e.clientY,p:peek,yw:yaw,moved:false};});
 addEventListener('pointermove',e=>{if(!down)return;const dx=e.clientX-down.x,dy=e.clientY-down.y;if(Math.hypot(dx,dy)>10)down.moved=true;if(!down.moved)return;
  peek=THREE.MathUtils.clamp(down.p+dy*-0.004,-0.3,1);yaw=THREE.MathUtils.clamp(down.yw+dx*-0.002,-0.5,0.5);});
-addEventListener('pointerup',e=>{if(down&&!down.moved&&state==='eat')tap(e.clientX,e.clientY);down=null;});
+addEventListener('pointerup',e=>{if(down&&!down.moved&&state==='eat'&&e.isTrusted!==false)tap(e.clientX,e.clientY);down=null;});
 addEventListener('pointercancel',()=>down=null);
 ['contextmenu','gesturestart','dblclick'].forEach(ev=>addEventListener(ev,e=>e.preventDefault(),{passive:false}));
 document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault();},{passive:false});
@@ -638,5 +639,5 @@ function resize(){const w=innerWidth,h=innerHeight,portrait=h>w;camera.aspect=w/
 addEventListener('resize',resize);addEventListener('orientationchange',()=>setTimeout(resize,200));
 applyTier();updateSoup();restHashi();restRenge();loop();
 window.__why=()=>{const L=topMeshes();const r=[];L.forEach((m,i)=>{const u=m.userData;const p=m.position.clone();m.position.set(u.baseX,u.baseY,u.baseZ);m.updateMatrixWorld(true);bowl.updateMatrixWorld(true);_bI.copy(bowl.matrixWorld).invert();r.push([m.name,topBowlHit(m),L.slice(0,i).filter(o=>meshOverlap(m,o)).map(o=>o.name).join('/')]);m.position.copy(p);m.updateMatrixWorld(true);});return r;};window.__settle=()=>{try{settle();}catch(e){return String(e)}return menmas.map(m=>[m.position.toArray().map(v=>+v.toFixed(3)),topBowlHit(m),m.parent.name,m.parent.position.toArray()]);};window.__dbgScoop=(lv)=>{soupLevel=lv;updateSoup();const fl=Math.max(floorY(),soupY()-0.0095);const sp=spoonInBowlPose(fl);if(!sp)return 'none';renge.position.copy(sp.pos).add(bowl.position);renge.rotation.copy(sp.rot);return [lv,fl.toFixed(4),sp.c.d.toFixed(3),sp.c.th.toFixed(2),sp.pos.y.toFixed(4),__audit().join()].join(' ');};
-window.__game={get state(){return state},get busy(){return busy},items,eat,get soupLevel(){return soupLevel},get order(){return order},get tier(){return tier},tap,camera,drink:drinkBowl,get mode(){return mode},setupChashu,chashus,menmas,kani,bowl,renge,toppingsRoot,THREE,restRenge};
+window.__moyashiW=()=>{const v=new THREE.Vector3();moyashiG.getWorldPosition(v);return v.toArray();};window.__game={get state(){return state},get busy(){return busy},items,eat,get soupLevel(){return soupLevel},get order(){return order},get tier(){return tier},tap,camera,drink:drinkBowl,get mode(){return mode},setupChashu,chashus,menmas,kani,bowl,renge,toppingsRoot,THREE,restRenge};
 </script></body></html>
