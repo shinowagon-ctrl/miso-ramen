@@ -455,7 +455,7 @@ const hangUp=new THREE.Mesh(hang.geometry,noodleMat);hangUp.visible=false;hangUp
 
 // ---------- UI ----------
 const $=id=>document.getElementById(id);
-let msgTimer;function say(t,best){const m=$('msg');m.textContent=t;m.className=best?'best':'';m.style.opacity=1;clearTimeout(msgTimer);msgTimer=setTimeout(()=>m.style.opacity=0,best?3200:2200);}
+let msgTimer;function say(t,best){if(!String(t).startsWith('「'))return;const m=$('msg');m.textContent=t;m.className=best?'best':'';m.style.opacity=1;clearTimeout(msgTimer);msgTimer=setTimeout(()=>m.style.opacity=0,best?3200:2200);}
 $('filmBtn').onclick=()=>$('wrap').classList.toggle('film');
 const LINES={men:['縮れ麺に味噌がからむ','ずずっ…うまい','麺もうまいんだよなぁ','まだまだ、ずずっ','最後のひとすすり'],
  chashu:['冷たいチャーシュー、やっぱり世界一','この冷たさがいいんだ…世界一','世界一うまい。間違いない','まだある、チャーシュー','肉の甘み…世界一','冷たいのがたまらない','あと少し…','最後の一枚、世界一'],
@@ -464,7 +464,7 @@ const LINES={men:['縮れ麺に味噌がからむ','ずずっ…うまい','麺�
  soup:['ニンニクが効いてる','濃い味噌、あったまる','ああ、この味だ','ニンニクがしみる','すり目が見えてきた','まだ飲める','レンゲが止まらない','あと少し','底が見えてきた','…飲み干した']};
 const bar=$('bar');
 function buildBar(){bar.innerHTML='';Object.values(items).forEach(it=>{const b=document.createElement('button');b.dataset.item=it.name;b.onclick=e=>{e.stopPropagation();eat(it.name);};bar.appendChild(b);});const w=document.createElement('button');w.dataset.water='1';w.id='waterBtn';w.textContent='水';w.onclick=e=>{e.stopPropagation();drinkWater();};bar.appendChild(w);const d=document.createElement('button');d.dataset.drink='1';d.id='drinkBtn';d.textContent='どんぶりで飲む';d.onclick=e=>{e.stopPropagation();drinkBowl();};bar.appendChild(d);refreshBar();}
-function refreshBar(){[...bar.children].forEach(b=>{if(b.dataset.water){b.disabled=waterLv<=0.01;b.textContent=waterLv>0.01?'水':'水（空）';return;}if(b.dataset.drink){b.disabled=items.soup.left<=0;return;}const it=items[b.dataset.item];b.disabled=it.left<=0;b.textContent=it.label+(it.portions>1&&it.left>0?` ${it.left}`:'');});}
+function refreshBar(){[...bar.children].forEach(b=>{if(b.dataset.water){b.disabled=waterLv<=0.01;b.textContent=waterLv>0.01?'水':'水（空）';return;}if(b.dataset.drink){const sol=Object.values(items).some(i=>i.name!=='soup'&&i.left>0);b.disabled=items.soup.left<=0;b.textContent=sol?'どんぶりで飲む':'スープを飲み干す';return;}const it=items[b.dataset.item];b.disabled=it.left<=0;b.textContent=it.label+(it.portions>1&&it.left>0?` ${it.left}`:'');});}
 
 // ---------- state & camera ----------
 let state='enter',busy=false,order=[],bites=[];
@@ -644,7 +644,7 @@ async function drinkWater(){if(state!=='eat'||busy||waterLv<=0.01)return;busy=tr
  cupG.position.copy(P0);cupG.rotation.x=0;clink(1400,.08);camDip=0;say(waterLv<=0.01?'水も、ぜんぶ飲んだ':'冷たい水で、ひと息');refreshBar();busy=false;}
 function gulp(){if(!AC)return;const t=AC.currentTime;const o=AC.createOscillator();o.type='sine';o.frequency.setValueAtTime(170,t);o.frequency.exponentialRampToValueAtTime(70,t+.18);const g=AC.createGain();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.09,t+.03);g.gain.exponentialRampToValueAtTime(.0001,t+.22);o.connect(g).connect(master);o.start(t);o.stop(t+.25);}
 async function drinkBowl(){if(state!=='eat'||busy)return;const it=items.soup;if(it.left<=0)return;busy=true;
- const n=Math.min(3,it.left);const before=soupLevel,after=Math.min(before,Math.max(0,(it.left-n)/it.portions));
+ const solids=Object.values(items).some(i=>i.name!=='soup'&&i.left>0);const n=solids?0:it.left;const before=soupLevel,after=solids?Math.max(0.05,before-0.03):0;
  spoonOnTable=false;bowl.updateMatrixWorld(true);renge.updateMatrixWorld(true);const RL=new THREE.Matrix4().copy(bowl.matrixWorld).invert().multiply(renge.matrixWorld);const _rs=new THREE.Vector3();const carryR=()=>{bowl.updateMatrixWorld(true);new THREE.Matrix4().multiplyMatrices(bowl.matrixWorld,RL).decompose(renge.position,renge.quaternion,_rs);};const p0=bowl.position.clone();camera.getWorldDirection(tmpV);const tgt=camera.position.clone().addScaledVector(tmpV,0.2).add(new THREE.Vector3(0,-0.1,0));
  const level=(tilt,sl)=>{soup.rotation.x=-Math.PI/2-tilt+sl;soup.scale.y=soup.scale.x*Math.cos(tilt)*0.97;};
  clink(900,.08);
