@@ -51028,10 +51028,22 @@ const warp=x=>9*Math.sin(x*0.042+0.6)+3.2*Math.sin(x*0.11+1.3);
 const U=(x,z)=>z+warp(x);
 const steep=x=>ss(18,34,x);                       // 東側は急な斜面（株ごとに植える）
 function slopeH(x,z){const u=U(x,z);return u*(0.3+0.22*steep(x))+fbm(x*0.018,z*0.018,3)*3.2-Math.abs(x)*0.02;}
+// A gently graded working terrace, with a soft earth bank back into the farm.
+const DRY={x0:-56,x1:-11,z0:-47,z1:0};
+function stationMask(x,z){
+ const field=(1-ss(0,7,Math.max(DRY.x0-x,0,x-DRY.x1)))*(1-ss(0,7,Math.max(DRY.z0-z,0,z-DRY.z1)));
+ const apron=(1-ss(0,4,Math.max(-40-x,0,x+26)))*(1-ss(0,4,Math.max(-59-z,0,z+46)));
+ return Math.max(field,apron);
+}
+const stationY=slopeH(-30,-24);
+const stationH=(x,z)=>stationY+(x+30)*0.035+(z+24)*0.055;
+const stationClear=(x,z)=>(x>-59&&x<-8&&z>-50&&z<3)||(x>-42&&x<-24&&z>-61&&z<-45)||(x>-23&&x<-11&&z>2&&z<11)||(x>-51&&x<-19&&Math.abs(z-(3+(x+48)*8/30))<2.4);
+const accessZ=x=>-24+3*Math.sin((x+12)*0.09);
+const accessClear=(x,z)=>x>=-12&&x<=pathX(z)+3&&Math.abs(z-accessZ(x))<2.6;
 function H(x,z){
   const b=slopeH(x,z), u=U(x,z), f=((u%ROW)+ROW)%ROW/ROW;
   const h=b-0.25*Math.cos(f*6.283)*(1-steep(x)*0.5);     // 列ごとのわずかな段
-  return lerp(b,h,ss(1.5,3.5,Math.abs(x-pathX(z))));
+  return lerp(lerp(b,h,ss(1.5,3.5,Math.abs(x-pathX(z)))),stationH(x,z),stationMask(x,z));
 }
 const rowDist=(x,z)=>{const u=U(x,z),f=((u%ROW)+ROW)%ROW;return Math.min(f,ROW-f);};
 const ALT0=1750, MPU=6; const altM=h=>Math.round((ALT0+(h+25)*MPU)/10)*10;
@@ -51071,6 +51083,12 @@ const soilTex=tex(soilCanvas(),1);
 // 樹皮
 const barkTex=(()=>{const [c,g]=cv(128,512);g.fillStyle='#8a7a68';g.fillRect(0,0,128,512);
   for(let i=0;i<220;i++){g.fillStyle=`rgba(${rnd()<.5?40:200},${rnd()<.5?35:190},${rnd()<.5?30:170},${.15+rnd()*.25})`;g.fillRect(rnd()*128,rnd()*512,1+rnd()*5,20+rnd()*90);}
+  // Lichen plates and soft moss stains, drawn over the vertical bark fibres.
+  for(let i=0;i<340;i++){
+    const x=rnd()*128,y=rnd()*512,r=2+rnd()*12;
+    g.fillStyle=i%3===0?'rgba(201,208,183,.44)':i%3===1?'rgba(67,88,46,.30)':'rgba(231,224,201,.34)';
+    g.beginPath();g.ellipse(x,y,r*.65,r*(.6+rnd()),rnd(),0,Math.PI*2);g.fill();
+  }
   return tex(c,0);})(); barkTex.wrapS=barkTex.wrapT=T3.RepeatWrapping;
 // 草（わら）
 const strawTex=(()=>{const [c,g]=cv(128,256);
@@ -51097,22 +51115,30 @@ let groundMesh, colSoil, colStraw;
   const W=FX*2+40, D=(FZ1-FZ0)+40, sx=220, sz=260;
   const g=new T3.PlaneGeometry(W,D,sx,sz); g.rotateX(-Math.PI/2);
   const p=g.attributes.position, uv=g.attributes.uv; colSoil=new Float32Array(p.count*3); colStraw=new Float32Array(p.count*3);
-  const c=new T3.Color(), c2=new T3.Color(), base=new T3.Color(0x9a6446), dark=new T3.Color(0x5a321c), litter=new T3.Color(0x8a6a3a), path=new T3.Color(0xc29a6c), straw=new T3.Color(0xd8b878), strawD=new T3.Color(0x9c7f45);
+  const c=new T3.Color(), c2=new T3.Color(), base=new T3.Color(0x9a6446), dark=new T3.Color(0x5a321c), litter=new T3.Color(0x8a6a3a), path=new T3.Color(0xae6544), straw=new T3.Color(0xd8b878), strawD=new T3.Color(0x9c7f45);
   for(let i=0;i<p.count;i++){
     const x=p.getX(i), z=p.getZ(i); p.setY(i,H(x,z)); uv.setXY(i,x/6,z/6);
     const rd=rowDist(x,z), onPath=1-ss(1.2,2.2,Math.abs(x-pathX(z))), n=fbm(x*0.3,z*0.3,3)*0.5+0.5;
     const ao=1-0.55*(1-ss(0.35,1.0,rd));                      // 株元を暗く（AO風）
     c.copy(base).lerp(litter,n*0.45).lerp(dark,0.25+0.3*fbm(x*0.08,z*0.08,2));
-    c.lerp(path,onPath*0.7).multiplyScalar(ao).convertSRGBToLinear();
+    const woodland=1-ss(24,46,x),edge=1-ss(1,2.2,Math.abs(x-pathX(z)));
+    c.lerp(new T3.Color(0x65804b),woodland*(.80+.12*n)*(1-edge));
+    c.lerp(path,onPath*0.7).multiplyScalar(lerp(ao,.92,woodland));
+    const work=stationMask(x,z), road=accessClear(x,z)?1:0;
+    c.lerp(new T3.Color(0xb07451),Math.max(work,road)*0.88).convertSRGBToLinear();
     c2.copy(straw).lerp(strawD,n*0.6).lerp(dark,(1-ss(0.4,0.9,rd))*0.6).lerp(path,onPath*0.6).multiplyScalar(ao).convertSRGBToLinear();
+    c2.lerp(c,Math.max(stationMask(x,z),accessClear(x,z)?1:0));
     colSoil.set([c.r,c.g,c.b],i*3); colStraw.set([c2.r,c2.g,c2.b],i*3);
   }
   g.setAttribute('color',new T3.BufferAttribute(colSoil.slice(),3)); g.computeVertexNormals();
-  groundMesh=new T3.Mesh(g,new T3.MeshStandardMaterial({vertexColors:true,map:soilTex,roughness:0.96}));
+  const floorC=soilCanvas(),floorG=floorC.getContext('2d'),pixels=floorG.getImageData(0,0,512,512);
+  for(let i=0;i<pixels.data.length;i+=4){const k=150+pixels.data[i]*.32;pixels.data[i]=k;pixels.data[i+1]=k;pixels.data[i+2]=k;}
+  floorG.putImageData(pixels,0,0);
+  groundMesh=new T3.Mesh(g,new T3.MeshStandardMaterial({vertexColors:true,map:tex(floorC,1),roughness:0.96}));
   groundMesh.receiveShadow=true; scene.add(groundMesh);
 }
 // 遠景：まわりの丘・となりの段々畑・森（1メッシュ）
-function farH(x,z){const d=Math.max(Math.abs(x)-FX-6,0,Math.abs(z)-FZ1-6), k=ss(0,40,d);
+function farH(x,z){if(Math.abs(x)<=FX+6&&Math.abs(z)<=FZ1+6)return H(x,z)-0.6;const d=Math.max(Math.abs(x)-FX-6,0,Math.abs(z)-FZ1-6), k=ss(0,40,d);
   return lerp(slopeH(clamp(x,-FX-10,FX+10),clamp(z,FZ0-10,FZ1+10))-0.6,slopeH(clamp(x,-80,80),clamp(z,-90,90))+fbm(x*0.008,z*0.008,4)*38+Math.max(0,z-FZ1)*0.35+d*0.08,k);}
 {
   const g=new T3.PlaneGeometry(1200,1200,200,200); g.rotateX(-Math.PI/2);
@@ -51123,7 +51149,13 @@ function farH(x,z){const d=Math.max(Math.abs(x)-FX-6,0,Math.abs(z)-FZ1-6), k=ss(
     c.copy(forest).lerp(forest2,0.5+0.5*fbm(x*0.03,z*0.03,3));
     const fc=new T3.Color().copy(field).lerp(fieldL,stripe*0.6).lerp(soil,(1-stripe)*0.25);
     c.lerp(fc,fieldMask); c.convertSRGBToLinear(); col.set([c.r,c.g,c.b],i*3);}
-  g.setAttribute('color',new T3.BufferAttribute(col,3)); g.computeVertexNormals();
+  g.setAttribute('color',new T3.BufferAttribute(col,3));
+  const keep=[],indices=g.index.array;
+  for(let i=0;i<indices.length;i+=3){
+    const a=indices[i],b=indices[i+1],c=indices[i+2];
+    if([a,b,c].every(k=>Math.abs(p.getX(k))<78&&Math.abs(p.getZ(k))<93))continue;
+    keep.push(a,b,c);
+  }g.setIndex(keep);g.computeVertexNormals();
   const m=new T3.Mesh(g,new T3.MeshStandardMaterial({vertexColors:true,roughness:1})); m.position.y=-0.05; m.receiveShadow=true; scene.add(m);
 }
 // 遠くの山並み
@@ -51131,7 +51163,7 @@ function farH(x,z){const d=Math.max(Math.abs(x)-FX-6,0,Math.abs(z)-FZ1-6), k=ss(
   const pos=[],col=[],idx=[]; const c=new T3.Color();
   const layers=[[420,110,0x5f7a64],[560,150,0x8ea39a],[-450,60,0x6f876a],[-600,90,0x98aca4]];
   layers.forEach(([zz,hh,cc],k)=>{const base=pos.length/3, N=160; c.setHex(cc).convertSRGBToLinear();
-    for(let i=0;i<=N;i++){const x=-900+i*(1800/N), top=hh+40*Math.sin(x*0.006+k*2)+fbm(x*0.01,k,4)*50;
+    for(let i=0;i<=N;i++){const x=-900+i*(1800/N), top=hh+40*Math.sin(x*0.006+k*2)+fbm(x*0.004,k,2)*25;
       pos.push(x,-60,zz,x,top,zz);col.push(c.r,c.g,c.b,c.r,c.g,c.b); if(i<N){const a=base+i*2;idx.push(a,a+2,a+1,a+1,a+2,a+3);}}});
   const g=new T3.BufferGeometry(); g.setAttribute('position',new T3.Float32BufferAttribute(pos,3)); g.setAttribute('color',new T3.Float32BufferAttribute(col,3)); g.setIndex(idx);
   scene.add(new T3.Mesh(g,new T3.MeshBasicMaterial({vertexColors:true,side:T3.DoubleSide,fog:true})));
@@ -51161,39 +51193,57 @@ sunGlow.scale.set(260,260,1); sunGlow.renderOrder=10; scene.add(sunGlow);
 
 // ---------- コーヒーの木の配置 ----------
 const dummy=new T3.Object3D(), tc=new T3.Color(), v=new T3.Vector3();
-const START={x:-14,z:0}; // 既定の視点の近く：細かく作る
-const near=(x,z)=>Math.hypot(x-START.x,z-START.z)<55;
+const START={x:-29.2,z:-24}; // 既定の視点の近く：細かく作る
+const near=(x,z)=>Math.min(Math.hypot(x-START.x,z-START.z),Math.hypot(x-pathX(z),z*.42))<(IS_MOBILE?8:12);
 const shadeSpots=[], coffeeSpots=[]; const TKX=-31, TKZ=7.5; // エチオピアの丸い家の位置（まわりは空き地）
 for(let z=FZ0+4;z<FZ1-2;z+=13)for(let x=-FX+4;x<FX-2;x+=15){const px=x+(rnd()-0.5)*8, pz=z+(rnd()-0.5)*8;
-  if((px-TKX)**2+(pz-TKZ)**2<50)continue; if(Math.abs(px-pathX(pz))<3.4||rowDist(px,pz)<1.2&&rnd()<0.6)continue; shadeSpots.push([px,pz,0.9+rnd()*0.5]);}
+  if(stationClear(px,pz)||accessClear(px,pz))continue; if((px-TKX)**2+(pz-TKZ)**2<50)continue; if(Math.abs(px-pathX(pz))<3.4||rowDist(px,pz)<1.2&&rnd()<0.6)continue; shadeSpots.push([px,pz,0.9+rnd()*0.5]);}
+// Widely spaced, high-crowned shade trees frame the clearing, not its aisles.
+[[-59,-39,1.15],[-59,-8,1.3],[-7,-43,1.15],[-7,-4,1.25],[-44,5,1.1]].forEach(p=>shadeSpots.push(p));
+for(let i=0;i<120;i++){
+  const z=FZ0+6+rnd()*(FZ1-FZ0-12),x=pathX(z)+(rnd()<.5?-1:1)*(5+rnd()*19);
+  if(stationClear(x,z)||accessClear(x,z)||(x-TKX)**2+(z-TKZ)**2<65)continue;
+  if(shadeSpots.some(p=>(p[0]-x)**2+(p[1]-z)**2<64))continue;
+  shadeSpots.push([x,z,.9+rnd()*.48]);
+}
 const urows=[]; for(let k=Math.floor((FZ0-30)/ROW);k*ROW<FZ1+30;k++)urows.push(k*ROW);
 urows.forEach((u,ri)=>{for(let x=-FX+1.5;x<FX-1;){
   const st=steep(x)>0.5, z=u-warp(x); const step=st?1.75:0.75;
-  const px=x+(st&&ri%2?step*0.5:0)+(rnd()-0.5)*0.2, pz=u-warp(px)+(rnd()-0.5)*0.15; x+=step;
-  if(pz<FZ0+2||pz>FZ1-2)continue; if(Math.abs(px-pathX(pz))<2.4)continue;
+  const px=x+(st&&ri%2?step*0.5:0)+(rnd()-0.5)*(x<24?.7:.2), pz=u-warp(px)+(rnd()-0.5)*(x<24?1.55:.15); x+=step;
+  if(pz<FZ0+2||pz>FZ1-2||stationClear(px,pz)||accessClear(px,pz))continue; if(Math.abs(px-pathX(pz))<2.4)continue;
   if((px-TKX)**2+(pz-TKZ)**2<42)continue;
   if(shadeSpots.some(s=>(s[0]-px)**2+(s[1]-pz)**2<3))continue; if(rnd()<0.03)continue;
   const dx=(warp(px+0.5)-warp(px-0.5)); const yaw=Math.atan2(-dx,1); // 列の向き
-  coffeeSpots.push([px,pz,st?0.95+rnd()*0.25:0.9+rnd()*0.2,yaw,st]);}});
+  coffeeSpots.push([px,pz,st?0.95+rnd()*0.25:0.85+rnd()*0.4,yaw,st]);}});
 const nC=coffeeSpots.length;
 // 中身（葉の密度を埋める暗いかたまり）
 function lumpy(r,detail,amp){const g=new T3.SphereGeometry(r,10+detail*6,8+detail*4);const p=g.attributes.position;const o=rnd()*100;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i);const k=1+amp*0.9*fbm(x/r*1.3+o,z/r*1.3+y/r*0.9,3);p.setXYZ(i,x*k,y*k,z*k);}g.computeVertexNormals();return g;}
-const coreGeo=lumpy(0.5,2,0.5); coreGeo.scale(0.85,1.35,0.85); coreGeo.translate(0,1.0,0);
-const coreMat=new T3.MeshStandardMaterial({color:0x172e11,roughness:0.9,flatShading:false}); addWind(coreMat,0.015);
+const coreGeo=lumpy(0.5,1,0.65); coreGeo.scale(1.16,1.55,1.10); coreGeo.translate(0,1.0,0);
+const understoryTex=(()=>{
+  const n=IS_MOBILE?256:512,[c,g]=cv(n,n);g.fillStyle='#304e23';g.fillRect(0,0,n,n);
+  for(let i=0;i<(IS_MOBILE?950:2200);i++){
+    const x=rnd()*n,y=rnd()*n,a=rnd()*6.28,L=(IS_MOBILE?7:11)+rnd()*(IS_MOBILE?8:14),W=L*.38;
+    g.save();g.translate(x,y);g.rotate(a);
+    const gr=g.createLinearGradient(0,-W,0,W);gr.addColorStop(0,'#8caa69');gr.addColorStop(.45,'#527e42');gr.addColorStop(1,'#1a3a20');
+    g.fillStyle=gr;g.beginPath();g.moveTo(-L*.5,0);g.quadraticCurveTo(0,-W,L*.5,0);g.quadraticCurveTo(0,W,-L*.5,0);g.fill();
+    g.strokeStyle='rgba(192,208,138,.32)';g.lineWidth=.65;g.beginPath();g.moveTo(-L*.4,0);g.lineTo(L*.4,0);g.stroke();g.restore();
+  }const t=tex(c);t.wrapS=t.wrapT=T3.RepeatWrapping;t.repeat.set(2,1);return t;
+})();
+const coreMat=new T3.MeshStandardMaterial({color:0xffffff,map:understoryTex,bumpMap:understoryTex,bumpScale:.075,roughness:.68,flatShading:false}); addWind(coreMat,0.015);
 const leafMat=new T3.MeshStandardMaterial({map:leafTex,alphaTest:0.45,side:T3.DoubleSide,roughness:0.32,metalness:0.0}); addWind(leafMat,0.04);
 const leafDepth=new T3.MeshDepthMaterial({depthPacking:T3.RGBADepthPacking,map:leafTex,alphaTest:0.45});
 const canopyMat=leafMat; // 雨のつや用に共通化
 const cores=new T3.InstancedMesh(coreGeo,coreMat,nC); cores.castShadow=true; cores.receiveShadow=true;
-const NEAR_CARDS=IS_MOBILE?18:34, FAR_CARDS=8;
+const NEAR_CARDS=IS_MOBILE?22:40, FAR_CARDS=IS_MOBILE?10:14;
 let nCards=0; coffeeSpots.forEach(s=>{nCards+=near(s[0],s[1])?NEAR_CARDS:FAR_CARDS;});
-const cardGeo=new T3.PlaneGeometry(0.44,0.44);
+const cardGeo=new T3.PlaneGeometry(0.54,0.54);
 const cards=new T3.InstancedMesh(cardGeo,leafMat,nCards); cards.castShadow=true; cards.receiveShadow=true; cards.customDepthMaterial=leafDepth;
 const nearCount=coffeeSpots.filter(s=>near(s[0],s[1])).length;
-const CL=7, CPC=9; const cherries=new T3.InstancedMesh(new T3.SphereGeometry(0.052,10,8),new T3.MeshPhysicalMaterial({color:0xffffff,roughness:0.28,clearcoat:0.8,clearcoatRoughness:0.15}),nearCount*CL*CPC);
+const CL=IS_MOBILE?6:9, CPC=9; const cherries=new T3.InstancedMesh(new T3.SphereGeometry(0.052,IS_MOBILE?6:8,6),new T3.MeshPhysicalMaterial({color:0xffffff,roughness:0.28,clearcoat:0.8,clearcoatRoughness:0.15}),nearCount*CL*CPC);
 const CH=[0x5f8f2f,0x8fae3e,0xd9b02a,0xd8551c,0xc0141f,0x9a0f1c];
 let ki=0, chi=0; const q=new T3.Quaternion(), e=new T3.Euler(), sc=new T3.Vector3(), m4=new T3.Matrix4();
 coffeeSpots.forEach(([x,z,s,yaw,st],i)=>{
-  const y=H(x,z)-0.05, sy=s*(0.92+rnd()*0.16), wx=st?1:1.25; // 生け垣は列方向に長く
+  const y=H(x,z)-0.05, sy=s*(1.16+rnd()*0.16), wx=st?1:1.25; // 生け垣は列方向に長く
   dummy.position.set(x,y,z); dummy.rotation.set(0,yaw+(st?rnd()*6:0),0); dummy.scale.set(s*wx,sy,s); dummy.updateMatrix(); cores.setMatrixAt(i,dummy.matrix);
   tc.setHSL(0.28+rnd()*0.03,0.42,0.16+rnd()*0.04); cores.setColorAt(i,tc.convertSRGBToLinear());
   const nn=near(x,z)?NEAR_CARDS:FAR_CARDS, big=nn===FAR_CARDS?1.25:1, rin=nn===FAR_CARDS?0.8:1;
@@ -51202,10 +51252,10 @@ coffeeSpots.forEach(([x,z,s,yaw,st],i)=>{
     v.set(Math.cos(th)*0.72*r*wx*rin, (0.15+hy*1.75*rin), Math.sin(th)*0.72*r*rin).applyAxisAngle(new T3.Vector3(0,1,0),yaw);
     dummy.position.set(x+v.x*s,y+v.y*sy,z+v.z*s);
     dummy.rotation.set((rnd()-0.5)*1.6,th+Math.PI/2+(rnd()-0.5)*1.2+yaw,(rnd()-0.5)*1.2); const cs=(0.8+rnd()*0.6)*big*s; dummy.scale.set(cs,cs,cs); dummy.updateMatrix();
-    cards.setMatrixAt(ki,dummy.matrix); const lt=hy>0.85&&rnd()<0.5; tc.setHSL(0.26+rnd()*0.05,lt?0.5:0.35,lt?0.62:0.42+rnd()*0.12); cards.setColorAt(ki++,tc);
+    cards.setMatrixAt(ki,dummy.matrix); const lt=hy>0.85&&rnd()<0.5; tc.setHSL(0.27+rnd()*0.045,lt?0.45:0.39,lt?0.46:0.29+rnd()*0.11); cards.setColorAt(ki++,tc);
   }
   if(near(x,z))for(let c=0;c<CL;c++){ // 枝の節ごとに実が房になる（赤・橙・緑がまざる）
-    const th=rnd()*6.283, hy=0.35+rnd()*1.25, ripe=0.35+rnd()*0.65;
+    const th=rnd()*6.283, hy=0.35+rnd()*1.25, ripe=0.72+rnd()*0.28;
     for(let k=0;k<CPC;k++){const node=k%3, a=th+(rnd()-0.5)*0.12, rr=(0.42+node*0.13)*s;
       v.set(Math.cos(a)*rr*wx+(rnd()-0.5)*0.07,hy*sy-node*0.06+(rnd()-0.5)*0.07,Math.sin(a)*rr+(rnd()-0.5)*0.07).applyAxisAngle(new T3.Vector3(0,1,0),yaw);
       const rp=ripe+(rnd()-0.5)*0.5, col=rp<0.25?CH[(rnd()*2)|0]:rp<0.45?CH[2+((rnd()*2)|0)]:CH[4+((rnd()*2)|0)];
@@ -51220,7 +51270,7 @@ const tuftGeo=(()=>{const P=[],UV=[];for(let i=0;i<3;i++){const a=i*1.047,cx=Mat
   const g=new T3.BufferGeometry();g.setAttribute('position',new T3.Float32BufferAttribute(P,3));g.setAttribute('uv',new T3.Float32BufferAttribute(UV,2));g.computeVertexNormals();return g;})();
 const strawMat=new T3.MeshStandardMaterial({map:strawTex,alphaTest:0.4,side:T3.DoubleSide,roughness:0.9}); addWind(strawMat,0.05);
 const NT=IS_MOBILE?7000:16000; const tufts=new T3.InstancedMesh(tuftGeo,strawMat,NT); let ti=0;
-for(let tries=0;ti<NT&&tries<NT*6;tries++){const x=START.x+(rnd()-0.5)*110,z=START.z+(rnd()-0.5)*110; if(x<-FX||x>FX||z<FZ0||z>FZ1)continue; if(rowDist(x,z)<0.75||steep(x)>0.5)continue;
+for(let tries=0;ti<NT&&tries<NT*6;tries++){const x=START.x+(rnd()-0.5)*110,z=START.z+(rnd()-0.5)*110; if(x<-FX||x>FX||z<FZ0||z>FZ1)continue; if(rowDist(x,z)<0.75||steep(x)>0.5||stationClear(x,z)||accessClear(x,z))continue;
   dummy.position.set(x,H(x,z)-0.02,z);dummy.rotation.set(0,rnd()*6.28,0);const s=0.7+rnd()*0.8;dummy.scale.set(s,s*(0.6+rnd()*0.8),s);dummy.updateMatrix();tufts.setMatrixAt(ti,dummy.matrix);tc.setHSL(0.11+rnd()*0.03,0.5,0.55+rnd()*0.15);tufts.setColorAt(ti++,tc);}
 tufts.count=ti; tufts.receiveShadow=true; scene.add(tufts);
 function setGround(s){groundStyle.v=s; groundMesh.geometry.attributes.color.array.set(s==='straw'?colStraw:colSoil); groundMesh.geometry.attributes.color.needsUpdate=true; tufts.visible=s==='straw';
@@ -51229,19 +51279,35 @@ document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>setGround(b.datas
 
 // ---------- 日陰の木（ユーカリ）・針葉樹の防風林・森 ----------
 const barkMat=new T3.MeshStandardMaterial({map:barkTex,color:0xd8d0c4,roughness:0.9});
-function trunkGeo(hgt,r0,r1){const g=new T3.CylinderGeometry(r1,r0,hgt,8,6);const p=g.attributes.position;for(let i=0;i<p.count;i++){const y=p.getY(i)/hgt+0.5;p.setX(i,p.getX(i)+Math.sin(y*3)*0.25*y);}g.translate(0,hgt/2,0);g.computeVertexNormals();return g;}
+function trunkGeo(hgt,r0,r1){const g=new T3.CylinderGeometry(r1,r0,hgt,10,4);g.translate(0,hgt/2,0);g.computeVertexNormals();return g;}
 const nS=shadeSpots.length;
-const euTr=new T3.InstancedMesh(trunkGeo(16,0.35,0.12),barkMat,nS); euTr.castShadow=true;
+const euTr=new T3.InstancedMesh(trunkGeo(20,0.36,0.22),barkMat,nS); euTr.castShadow=true;
+const crookedG=trunkGeo(20,.53,.25),cp=crookedG.attributes.position;
+for(let i=0;i<cp.count;i++){
+  const k=cp.getY(i)/20;cp.setX(i,cp.getX(i)+1.2*Math.sin(k*2.3)+.5*k*k);cp.setZ(i,cp.getZ(i)+.55*Math.sin(k*3.7)*k);
+}crookedG.computeVertexNormals();
+const gnTr=new T3.InstancedMesh(crookedG,barkMat,nS);gnTr.castShadow=true;
+const shadeBranches=new T3.InstancedMesh(new T3.CylinderGeometry(.065,.16,1,6),barkMat,nS*6);
+shadeBranches.castShadow=true;let straightI=0,gnarledI=0,branchI=0;
+const branchD=new T3.Object3D(),branchUp=new T3.Vector3(0,1,0);
 // 樹冠：葉のかたまり（クランプ）を傘の形に重ね、表面に沿って葉を並べる（ばらばらの破片に見えないように）
-const crownGeo=(()=>{const g=lumpy(1.5,1,0.42);g.scale(1.25,0.62,1.25);return g;})();
+const crownGeo=(()=>{const g=lumpy(1.5,1,0.42);g.scale(1.4,0.95,1.18);return g;})();
 const crownMat=new T3.MeshStandardMaterial({color:0xffffff,roughness:0.85}); addWind(crownMat,0.02);
 const CPT=7, EUC=IS_MOBILE?40:90;
 const euCrown=new T3.InstancedMesh(crownGeo,crownMat,nS*CPT); euCrown.castShadow=true; euCrown.receiveShadow=true;
 const euLeaf=new T3.InstancedMesh(new T3.PlaneGeometry(0.55,0.55),leafMat,nS*EUC); euLeaf.castShadow=true; euLeaf.customDepthMaterial=leafDepth;
 let ei=0,cri=0; const nrm=new T3.Vector3(), up3=new T3.Vector3(0,0,1);
-shadeSpots.forEach(([x,z,s],i)=>{const y=H(x,z)-0.2; const sy=s*(0.85+rnd()*0.4); dummy.position.set(x,y,z);dummy.rotation.set(0,rnd()*6.28,0);dummy.scale.set(s,sy,s);dummy.updateMatrix();euTr.setMatrixAt(i,dummy.matrix);
-  const top=y+15.4*sy, hue=0.25+rnd()*0.04, cl=[];
-  for(let k=0;k<CPT;k++){const a=k/CPT*6.283+rnd()*0.5, r=(k===0?0:1.9+rnd()*0.9)*s; const cx=x+(k===0?0:Math.cos(a)*r)+Math.sin(15.4*0.2)*0.25*s, cz=z+(k===0?0:Math.sin(a)*r), cy=top+(k===0?0.6:-0.2-rnd()*0.8)*s;
+shadeSpots.forEach(([x,z,s],i)=>{const y=H(x,z)-0.2,sy=s*(.9+rnd()*.35),bent=i%3===0,treeYaw=rnd()*6.28;
+  dummy.position.set(x,y,z);dummy.rotation.set(0,treeYaw,0);dummy.scale.set(s,sy,s);dummy.updateMatrix();
+  const trunk=bent?gnTr:euTr,idx=bent?gnarledI++:straightI++;trunk.setMatrixAt(idx,dummy.matrix);
+  const dx=bent?(1.2*Math.sin(2.3)+.5)*s:0,dz=bent?.55*Math.sin(3.7)*s:0;
+  const tx=x+Math.cos(treeYaw)*dx+Math.sin(treeYaw)*dz,tz=z-Math.sin(treeYaw)*dx+Math.cos(treeYaw)*dz;
+  const top=y+19.7*sy, hue=0.25+rnd()*0.04, cl=[];
+  for(let k=0;k<CPT;k++){const a=k/CPT*6.283+rnd()*0.5, r=(k===0?0:1.6+rnd()*2.2)*s; const cx=tx+(k===0?0:Math.cos(a)*r), cz=tz+(k===0?0:Math.sin(a)*r), cy=top+(k===0?.6:-.2-rnd()*1.2)*s;
+    if(k>0){
+      const bottom=new T3.Vector3(tx,top-3.3*sy,tz),end=new T3.Vector3(cx,cy-.25,cz),dir=end.clone().sub(bottom);
+      branchD.position.copy(bottom).addScaledVector(dir,.5);branchD.quaternion.setFromUnitVectors(branchUp,dir.clone().normalize());branchD.scale.set(s,dir.length(),s);branchD.updateMatrix();shadeBranches.setMatrixAt(branchI++,branchD.matrix);
+    }
     const sc=(k===0?1.25:0.85+rnd()*0.35)*s; cl.push([cx,cy,cz,sc]);
     dummy.position.set(cx,cy,cz);dummy.rotation.set(0,rnd()*6.28,0);dummy.scale.set(sc,sc*(0.9+rnd()*0.3),sc);dummy.updateMatrix();euCrown.setMatrixAt(cri,dummy.matrix);
     tc.setHSL(hue,0.38,0.17+rnd()*0.05);euCrown.setColorAt(cri++,tc.convertSRGBToLinear());}
@@ -51253,15 +51319,28 @@ shadeSpots.forEach(([x,z,s],i)=>{const y=H(x,z)-0.2; const sy=s*(0.85+rnd()*0.4)
     tc.setHSL(hue+rnd()*0.03,0.32,0.36+rnd()*0.14); euLeaf.setColorAt(ei++,tc);}
   dummy.rotation.set(0,0,0);});
 euCrown.instanceMatrix.needsUpdate=true; euCrown.instanceColor.needsUpdate=true; scene.add(euCrown);
-scene.add(euTr,euLeaf);
+euTr.count=straightI;gnTr.count=gnarledI;shadeBranches.count=branchI;
+scene.add(euTr,gnTr,shadeBranches,euLeaf);
+const vineMat=new T3.MeshStandardMaterial({color:0x59633c,roughness:1});
+for(let i=0;i<shadeSpots.length;i+=IS_MOBILE?12:7){const p=shadeSpots[i];if(stationClear(p[0],p[1]))continue;
+  const y=H(p[0],p[1]),curve=new T3.CatmullRomCurve3([new T3.Vector3(p[0]+2,y+18,p[1]),new T3.Vector3(p[0]+1.2,y+13,p[1]+.8),new T3.Vector3(p[0]+1.6,y+7.5,p[1]+1.2)]);
+  scene.add(new T3.Mesh(new T3.TubeGeometry(curve,12,.027,3,false),vineMat));}
+// Green fernlike verge tufts, kept off the walking line and away from drying aisles.
+const vergeM=new T3.MeshStandardMaterial({map:strawTex,color:0x247d35,alphaTest:.4,side:T3.DoubleSide,roughness:.9});addWind(vergeM,.035);
+const vergeN=IS_MOBILE?550:1200,verges=new T3.InstancedMesh(tuftGeo,vergeM,vergeN);let vi=0;
+for(let i=0;i<vergeN*4&&vi<vergeN;i++){
+  const z=FZ0+4+rnd()*(FZ1-FZ0-8),x=pathX(z)+(rnd()<.5?-1:1)*(1.3+rnd()*3.6);
+  if(stationClear(x,z)||accessClear(x,z))continue;
+  dummy.position.set(x,H(x,z),z);dummy.rotation.set(0,rnd()*6.28,0);dummy.scale.set(.5+rnd()*.65,.38+rnd()*.5,.5+rnd()*.65);dummy.updateMatrix();verges.setMatrixAt(vi++,dummy.matrix);
+}verges.count=vi;verges.receiveShadow=true;scene.add(verges);
 // 針葉樹（スギのような防風林）＋森のふち
 const coniferGeo=(()=>{const L=[];for(let k=0;k<5;k++){const g=lumpy(1,1,0.35);g.scale(1.9-k*0.33,1.6,1.9-k*0.33);g.translate(0,4+k*2.3,0);L.push(g);}
   const P=[],N=[];L.forEach(g=>{P.push(...g.attributes.position.array);N.push(...g.attributes.normal.array);});const o=new T3.BufferGeometry();o.setAttribute('position',new T3.Float32BufferAttribute(P,3));o.setAttribute('normal',new T3.Float32BufferAttribute(N,3));return o;})();
 const roundGeo=(()=>{const g=lumpy(3,1,0.4);g.scale(1,0.8,1);g.translate(0,8,0);return g;})();
 const forestSpots=[];
-for(let x=-FX;x<=FX;x+=3.2)forestSpots.push([x+(rnd()-0.5)*1.5,FZ1+2+rnd()*3,'c']);          // 上の防風林
-for(let z=FZ0;z<=FZ1;z+=3.4)forestSpots.push([FX+2+rnd()*4,z+(rnd()-0.5)*2,'c']);
-for(let i=0;i<700;i++){const a=rnd()*6.28,r=1;let x=(rnd()-0.5)*(FX*2+90),z=(rnd()-0.5)*(FZ1-FZ0+90); if(Math.abs(x)<FX+4&&Math.abs(z)<FZ1+5)continue; forestSpots.push([x,z,rnd()<0.45?'c':'r']);}
+for(let x=-FX;x<=FX;x+=3.2)forestSpots.push([x+(rnd()-0.5)*1.5,FZ1+2+rnd()*3,rnd()<0.16?'c':'r']);          // 上の防風林
+for(let z=FZ0;z<=FZ1;z+=3.4)forestSpots.push([FX+2+rnd()*4,z+(rnd()-0.5)*2,rnd()<0.16?'c':'r']);
+for(let i=0;i<700;i++){const a=rnd()*6.28,r=1;let x=(rnd()-0.5)*(FX*2+90),z=(rnd()-0.5)*(FZ1-FZ0+90); if(Math.abs(x)<FX+4&&Math.abs(z)<FZ1+5)continue; forestSpots.push([x,z,rnd()<0.10?'c':'r']);}
 const coMat=new T3.MeshStandardMaterial({color:0xffffff,roughness:0.9}); addWind(coMat,0.03);
 const nCo=forestSpots.filter(s=>s[2]==='c').length, nRo=forestSpots.length-nCo;
 const coM=new T3.InstancedMesh(coniferGeo,coMat,nCo), roM=new T3.InstancedMesh(roundGeo,coMat,nRo), fTr=new T3.InstancedMesh(trunkGeo(6,0.35,0.2),barkMat,forestSpots.length);
@@ -51290,6 +51369,150 @@ scene.add(coM,roM,fTr);
     const w=new T3.Mesh(new T3.BoxGeometry(10,3,5),wall);w.position.y=1.5;const rf=new T3.Mesh(new T3.CylinderGeometry(0.01,4.2,1.6,4,1),roofM);rf.rotation.y=Math.PI/4;rf.scale.set(1.75,1,0.88);rf.position.y=3.8;
     w.castShadow=rf.castShadow=true;b.add(w,rf);b.position.set(x,y-0.3,z);b.rotation.y=r;scene.add(b);});}
 
+// ---------- Raised drying beds: procedural surfaces, shared instanced hardware ----------
+const dryingBeds=[], stationObstacles=[];
+(function buildDryingStation(){
+  const BW=2.05, BL=18, BY=1.04;
+  // Canvas-only original cherry and woven net textures. No photographic sources.
+  function cherrySurface(dark){
+    const n=IS_MOBILE?256:512,[c,g]=cv(n,n*2);
+    g.fillStyle=dark?'#3b2020':'#5b1720';g.fillRect(0,0,c.width,c.height);
+    const r=IS_MOBILE?3.2:5.1;
+    for(let yy=-r;yy<c.height+r;yy+=r*1.65)for(let xx=-r;xx<c.width+r;xx+=r*1.7){
+      const x=xx+(rnd()-.5)*r,y=yy+(rnd()-.5)*r,rr=r*(.74+rnd()*.28);
+      const gr=g.createRadialGradient(x-rr*.3,y-rr*.4,.15,x,y,rr);
+      gr.addColorStop(0,dark?'#9d5850':'#ff9c89');gr.addColorStop(.24,dark?'#713334':'#d9363b');
+      gr.addColorStop(.65,dark?'#512329':'#a81025');gr.addColorStop(1,dark?'#281b1a':'#590e19');
+      g.fillStyle=gr;g.beginPath();g.ellipse(x,y,rr,rr*1.12,rnd(),0,Math.PI*2);g.fill();
+      if(rnd()<.23){g.strokeStyle=dark?'#2e201c':'#741222';g.lineWidth=.7;g.beginPath();g.moveTo(x,y-rr*.55);g.lineTo(x+.2,y+rr*.55);g.stroke();}
+    }
+    const t=tex(c);t.wrapS=t.wrapT=T3.RepeatWrapping;t.repeat.set(1,5);return t;
+  }
+  const [nc,ng]=cv(64,64);ng.clearRect(0,0,64,64);ng.strokeStyle='#151915';ng.lineWidth=2;
+  for(let k=0;k<=64;k+=8){ng.beginPath();ng.moveTo(k,0);ng.lineTo(k,64);ng.moveTo(0,k);ng.lineTo(64,k);ng.stroke();}
+  const net=tex(nc);net.wrapS=net.wrapT=T3.RepeatWrapping;net.repeat.set(6,35);
+  const redM=new T3.MeshStandardMaterial({map:cherrySurface(false),roughness:.4,bumpScale:.018});redM.bumpMap=redM.map;
+  const darkM=new T3.MeshStandardMaterial({map:cherrySurface(true),roughness:.88,bumpScale:.025});darkM.bumpMap=darkM.map;
+  const woodM=new T3.MeshStandardMaterial({map:barkTex,color:0xa3875a,roughness:.95});
+  const meshM=new T3.MeshStandardMaterial({map:net,color:0x302921,alphaTest:.25,side:T3.DoubleSide,roughness:.9});
+  const steelM=new T3.MeshStandardMaterial({color:0x646b69,metalness:.67,roughness:.37});
+  const yellowM=new T3.MeshStandardMaterial({color:new T3.Color(0xffb900).convertSRGBToLinear(),roughness:.55,metalness:0,side:T3.DoubleSide});
+  const shadeM=new T3.MeshStandardMaterial({map:net,color:0x1c231e,transparent:true,opacity:.74,side:T3.DoubleSide,depthWrite:false,roughness:1});
+  const buckets={posts:[],rails:[],hoops:[],mesh:[],red:[],dark:[],yellow:[],shade:[],rolls:[],ends:[]};
+  function record(k,x,y,z,sx,sy,sz,rx=0,ry=0,rz=0){buckets[k].push([x,y,z,sx,sy,sz,rx,ry,rz]);}
+  // Half-cylinder aligned down z, with subtle plastic wrinkles between the ribs.
+  function tunnelGeometry(){
+    const P=[],UV=[],I=[],A=IS_MOBILE?16:24,Z=18;
+    for(let j=0;j<=Z;j++)for(let i=0;i<=A;i++){
+      const a=i/A*Math.PI,wr=1+.018*Math.sin(j*6.2+i*.7)*Math.sin(a);
+      P.push(Math.cos(a)*BW*.525*wr,Math.sin(a)*BW*.525*wr,(j/Z-.5)*BL);
+      UV.push(i/A,j/Z);
+    }
+    for(let j=0;j<Z;j++)for(let i=0;i<A;i++){const a=j*(A+1)+i,b=a+A+1;I.push(a,b,a+1,a+1,b,b+1);}
+    const g=new T3.BufferGeometry();g.setAttribute('position',new T3.Float32BufferAttribute(P,3));g.setAttribute('uv',new T3.Float32BufferAttribute(UV,2));g.setIndex(I);g.computeVertexNormals();return g;
+  }
+  for(let bank=0;bank<2;bank++)for(let row=0;row<12;row++){
+    const x=-53+row*3.4,z=bank===0?-36:-13;
+    // Hero bed (row 7, near bank) remains uncovered, packed with red cherries.
+    let type=[0,4,3,1,2,4,3,0,1,4,0,3][(row+bank*3)%12];
+    if(bank===1&&row===7)type=0;
+    const y=H(x,z)+BY;
+    const bed={x,z,y,w:BW,l:BL,type};dryingBeds.push(bed);
+    stationObstacles.push({x0:x-BW/2-.22,x1:x+BW/2+.22,z0:z-BL/2-.24,z1:z+BL/2+.24});
+    record('mesh',x,y,z,BW,BL,1,-Math.PI/2);
+    if(type===0||type===1||type===3)record(type===1?'dark':'red',x,y+.025,z,BW*.97,BL*.99,1,-Math.PI/2);
+    for(const side of [-1,1]){
+      const xx=x+side*BW/2;
+      record('rails',xx,y-.045,z,.075,.13,BL+.12);
+      for(let k=0;k<=6;k++){
+        const zz=z-BL/2+k*BL/6,ground=H(xx,zz),h=y-ground;
+        record('posts',xx,ground+h/2,zz,.10,Math.max(.15,h),.10);
+      }
+      // Bunched, uneven yellow tarp rolls on both long edges of open beds.
+      if(type===0||type===1||type===2)for(let k=0;k<9;k++){
+        record('rolls',xx+side*.12,y+.12,z-BL/2+(k+.5)*BL/9,.12+rnd()*.045,BL/9+.12,.12+rnd()*.025,Math.PI/2,0,(rnd()-.5)*.1);
+      }
+    }
+    for(let k=0;k<=6;k++)record('hoops',x,y+.04,z-BL/2+k*BL/6,1,1,1);
+    if(type===4){
+      record('yellow',x,y+.05,z,1,1,1);
+      for(const side of [-1,1])record('ends',x,y+.05,z+side*BL/2,1,1,1);
+    }
+    if(type===3)record('shade',x,y+.06,z,1,1,1);
+  }
+  function instances(key,geo,mat,shadow){
+    const list=buckets[key],m=new T3.InstancedMesh(geo,mat,list.length),d=new T3.Object3D();
+    list.forEach((p,i)=>{d.position.set(p[0],p[1],p[2]);d.scale.set(p[3],p[4],p[5]);d.rotation.set(p[6],p[7],p[8]);d.updateMatrix();m.setMatrixAt(i,d.matrix);});
+    m.castShadow=!!shadow;m.receiveShadow=true;m.instanceMatrix.needsUpdate=true;scene.add(m);return m;
+  }
+  const box=new T3.BoxGeometry(1,1,1),plane=new T3.PlaneGeometry(1,1),tunnel=tunnelGeometry();
+  instances('posts',box,woodM,true);instances('rails',box,woodM,true);
+  instances('mesh',plane,meshM,false);instances('red',plane,redM,false);instances('dark',plane,darkM,false);
+  instances('hoops',new T3.TorusGeometry(BW*.525,.022,5,IS_MOBILE?16:24,Math.PI),steelM,false);
+  const ep=[0,0,0],ei=[];
+  for(let k=0;k<=24;k++){const a=k/24*Math.PI;ep.push(Math.cos(a)*BW*.525,Math.sin(a)*BW*.525,0);if(k<24)ei.push(0,k+1,k+2);}
+  const endG=new T3.BufferGeometry();endG.setAttribute('position',new T3.Float32BufferAttribute(ep,3));endG.setIndex(ei);endG.computeVertexNormals();
+  instances('ends',endG,yellowM,true);
+  instances('yellow',tunnel,yellowM,true);instances('shade',tunnel,shadeM,false);
+  // Ring-shaped pleats make the rolls read as folded plastic rather than straight pipes.
+  const rollG=new T3.CylinderGeometry(1,1,1,8,12);const rp=rollG.attributes.position;
+  for(let i=0;i<rp.count;i++){const k=1+.14*Math.sin(rp.getY(i)*72);rp.setX(i,rp.getX(i)*k);rp.setZ(i,rp.getZ(i)*k);}rollG.computeVertexNormals();
+  instances('rolls',rollG,yellowM,true);
+  // Only 2 mobile / 3 desktop beds get foreground 3D fruit, with canvas density beneath.
+  const close=dryingBeds.filter(b=>(b.type===0||b.type===1)&&b.z===-36).sort((a,b)=>Math.abs(a.x-START.x)-Math.abs(b.x-START.x)).slice(0,IS_MOBILE?2:3);
+  const per=IS_MOBILE?180:520,fruit=new T3.InstancedMesh(new T3.SphereGeometry(.052,IS_MOBILE?6:8,6),new T3.MeshPhysicalMaterial({color:0xffffff,roughness:.25,clearcoat:1,clearcoatRoughness:.12}),close.length*per);
+  let fi=0;
+  close.forEach(b=>{for(let k=0;k<per;k++){
+    const zz=(rnd()-.5)*BL*.98,xx=(rnd()-.5)*BW*.94;
+    dummy.position.set(b.x+xx,b.y+.065,b.z+zz);dummy.rotation.set(rnd(),rnd()*6.28,0);dummy.scale.set(1,1.12,1);dummy.updateMatrix();fruit.setMatrixAt(fi,dummy.matrix);
+    tc.setHex(b.type===1?0x652633:(rnd()<.08?0x7b1824:0xd51c32));tc.offsetHSL(0,0,(rnd()-.5)*.09);fruit.setColorAt(fi++,tc.convertSRGBToLinear());
+  }});fruit.receiveShadow=true;scene.add(fruit);
+  // Airy open-ended hangar skeleton, behind the working field.
+  const hx=-33,hz=-52,hy=H(hx,hz),hangar=new T3.Group();
+  const archG=new T3.TorusGeometry(5,.055,6,32,Math.PI),beamG=new T3.CylinderGeometry(.05,.05,12,6);
+  for(let k=0;k<6;k++){
+    const arch=new T3.Mesh(archG,steelM);arch.position.set(0,2,k*2.4-6);hangar.add(arch);
+    for(const side of [-1,1]){const p=new T3.Mesh(new T3.CylinderGeometry(.065,.065,2,6),steelM);p.position.set(side*5,1,k*2.4-6);hangar.add(p);}
+  }
+  for(const a of [0,.65,Math.PI/2,Math.PI-.65,Math.PI]){const p=new T3.Mesh(beamG,steelM);p.rotation.x=Math.PI/2;p.position.set(Math.cos(a)*5,2+Math.sin(a)*5,0);hangar.add(p);}
+  hangar.position.set(hx,hy,hz);scene.add(hangar);
+  // Pale corrugated gabled mill roof at the foot of a winding red-earth service lane.
+  const mx=-17,mz=6,my=H(mx,mz),mill=new T3.Group();
+  const millWall=new T3.MeshStandardMaterial({color:0xcfc7ad,roughness:.95}),roofM=new T3.MeshStandardMaterial({color:0xc8d1d1,metalness:.55,roughness:.48});
+  const wall=new T3.Mesh(new T3.BoxGeometry(10,2.9,5.5),millWall);wall.position.y=1.45;mill.add(wall);
+  for(const side of [-1,1]){const rf=new T3.Mesh(new T3.BoxGeometry(11,.09,3.5),roofM);rf.position.set(0,3.35,side*1.6);rf.rotation.x=side*.29;mill.add(rf);
+    for(let i=0;i<32;i++){const rib=new T3.Mesh(new T3.CylinderGeometry(.025,.025,3.5,4),roofM);rib.rotation.set(Math.PI/2+side*.29,0,0);rib.position.set(-5.3+i*.34,3.4,side*1.6);mill.add(rib);}}
+  const doorM=new T3.MeshStandardMaterial({color:0x353a34});for(const xx of [-3,0,3]){const d=new T3.Mesh(new T3.PlaneGeometry(1.6,2),doorM);d.position.set(xx,1,2.76);mill.add(d);}
+  mill.position.set(mx,my,mz);mill.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});scene.add(mill);
+  stationObstacles.push({x0:mx-5.25,x1:mx+5.25,z0:mz-3,z1:mz+3});
+  function dirtLane(points,width){
+    const path=new T3.CatmullRomCurve3(points.map(p=>new T3.Vector3(p[0],0,p[1]))),P=[],UV=[],I=[];
+    for(let i=0;i<=100;i++){const t=i/100,p=path.getPoint(t),dir=path.getTangent(t),normal=new T3.Vector3(-dir.z,0,dir.x);
+      for(const side of [-1,1]){const x=p.x+normal.x*side*width/2,z=p.z+normal.z*side*width/2;P.push(x,H(x,z)+.04,z);UV.push(side===1?1:0,t*16);}
+      if(i<100){const k=i*2;I.push(k,k+2,k+1,k+1,k+2,k+3);}}
+    const g=new T3.BufferGeometry();g.setAttribute('position',new T3.Float32BufferAttribute(P,3));g.setAttribute('uv',new T3.Float32BufferAttribute(UV,2));g.setIndex(I);g.computeVertexNormals();
+    const m=new T3.Mesh(g,new T3.MeshStandardMaterial({map:soilTex,color:0xba7951,roughness:1,side:T3.DoubleSide}));m.receiveShadow=true;scene.add(m);
+  }
+  const forestRoute=[];for(let z=FZ0+3;z<=FZ1-3;z+=4)forestRoute.push([pathX(z),z]);
+  dirtLane(forestRoute,1.6);
+  dirtLane([[pathX(-20),-20],[-6,-22],[-12,-24],[-29,-24],[-57,-24],[-59,-2],[-48,3],[-18,11]],2.5);
+  // A few woven baskets and yellow sacks, deliberately no people, signs or labels.
+  const [bc,bg]=cv(128,128);bg.fillStyle='#a37c43';bg.fillRect(0,0,128,128);
+  for(let k=0;k<128;k+=5){bg.strokeStyle=k%10?'#c7a66d':'#75572c';bg.lineWidth=2;bg.beginPath();bg.moveTo(k,0);bg.lineTo(k,128);bg.moveTo(0,k);bg.lineTo(128,k);bg.stroke();}
+  const basketM=new T3.MeshStandardMaterial({map:tex(bc),roughness:1,side:T3.DoubleSide});
+  [[-24,-24.2],[-20,-24.4],[-48,-2]].forEach(([x,z],i)=>{
+    const basket=new T3.Mesh(new T3.CylinderGeometry(.39,.28,.53,14,1,true),basketM);basket.position.set(x,H(x,z)+.27,z);scene.add(basket);
+    const sack=new T3.Mesh(new T3.SphereGeometry(.34,10,8),yellowM);sack.scale.set(.75,1.6,.8);sack.position.set(x+.8,H(x+.8,z)+.45,z);sack.rotation.z=.18;scene.add(sack);
+  });
+})();
+function resolveStationCollision(p){
+  for(const b of stationObstacles){
+    if(p.x<=b.x0||p.x>=b.x1||p.z<=b.z0||p.z>=b.z1)continue;
+    const distances=[p.x-b.x0,b.x1-p.x,p.z-b.z0,b.z1-p.z],side=distances.indexOf(Math.min(...distances));
+    if(side===0)p.x=b.x0;else if(side===1)p.x=b.x1;else if(side===2)p.z=b.z0;else p.z=b.z1;
+  }
+}
+
 // ---------- 雨（すじ＋もや） ----------
 const RN=IS_MOBILE?2500:6000, RB=[40,28,40];
 const rp=new Float32Array(RN*6), rs=new Float32Array(RN);
@@ -51301,6 +51524,13 @@ const mistTex=(()=>{const [c,g]=cv(256,256);const gr=g.createRadialGradient(128,
 const mistMat=new T3.SpriteMaterial({map:mistTex,transparent:true,depthWrite:false,opacity:0,color:0xdde3ea});
 const mists=[]; for(let i=0;i<26;i++){const s=new T3.Sprite(mistMat);const x=(rnd()-0.5)*110,z=(rnd()-0.5)*140;s.position.set(x,H(clamp(x,-FX,FX),clamp(z,FZ0,FZ1))+3+rnd()*5,z);const k=25+rnd()*30;s.scale.set(k,k*0.35,1);mists.push(s);scene.add(s);}
 
+// Low, broad banks of mist sit in the valley folds, away from the hero bed.
+const valleyMistMat=new T3.SpriteMaterial({map:mistTex,transparent:true,depthWrite:false,opacity:0.15,color:0xe4e8e4});
+for(let i=0;i<(IS_MOBILE?9:16);i++){
+  const x=-130+rnd()*260,z=-95-rnd()*90;
+  const m=new T3.Sprite(valleyMistMat);m.position.set(x,farH(x,z)+2.0,z);
+  m.scale.set(65+rnd()*55,8+rnd()*7,1);scene.add(m);
+}
 // ---------- 地球 ----------
 const gScene=new T3.Scene(); gScene.background=new T3.Color(0xf1f3f6);
 const gCam=new T3.PerspectiveCamera(36,1,0.1,200);
@@ -51320,8 +51550,8 @@ gScene.add(pins);
 let gCtrl, oCtrl;
 
 // ---------- カメラ・操作 ----------
-const _u0=Math.round((START.z+warp(START.x))/ROW)*ROW+ROW/2, _sz=_u0-warp(START.x);
-const player={x:START.x,z:_sz,yaw:+(Q.get('yaw')||-Math.PI/2),pitch:-0.04,fov:62};
+const _sz=START.z;
+const player={x:START.x,z:_sz,yaw:Q.has('yaw')?+Q.get('yaw'):Math.PI,pitch:-0.20,fov:62};
 oCtrl=new T3.OrbitControls(camera,renderer.domElement); oCtrl.enableDamping=true; oCtrl.maxPolarAngle=1.35; oCtrl.minDistance=20; oCtrl.maxDistance=190;
 gCtrl=new T3.OrbitControls(gCam,renderer.domElement); gCtrl.enableDamping=true; gCtrl.minDistance=13; gCtrl.maxDistance=60; gCtrl.enablePan=false; gCtrl.rotateSpeed=0.6;
 gCam.position.copy(ll2v(10,-30,46)); gCtrl.target.set(0,0,0);
@@ -51331,7 +51561,7 @@ function setMode(m){
   document.querySelectorAll('[data-v]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===m));
   mkLayer.style.display=m==='globe'?'':'none';
   $('hint').textContent=IS_MOBILE?(m==='walk'?'画面をなぞって見回す・左下の十字で歩く':m==='top'?'指でドラッグして回転・ピンチで拡大':'産地名を押すと農園へ降ります'):(m==='walk'?'クリックしてから ←↑↓→ / WASD で歩く・ドラッグで見回す':m==='top'?'ドラッグで回転・ホイールで拡大縮小':'産地名を押すと農園へ降ります');
-  if(m==='top'){camera.position.set(player.x+60,H(player.x,player.z)+75,player.z-70);oCtrl.target.set(0,H(0,0),0);camera.fov=50;camera.updateProjectionMatrix();}
+  if(m==='top'){camera.position.set(player.x+60,H(player.x,player.z)+75,player.z-70);oCtrl.target.set(-30,H(-30,-24),-24);camera.fov=50;camera.updateProjectionMatrix();}
   if(m==='walk'){camera.fov=player.fov;camera.updateProjectionMatrix();}
   capT=0; capIdx=0; updateCap(true);
 }
@@ -51384,14 +51614,16 @@ function applyTime(){
   sun.intensity=(0.5+2.2*clamp(el,0,1)+0.6*lowness)*(1-0.85*rainAmt);
   hemi.intensity=0.5+0.35*clamp(el,0,1); hemi.color.set(0xcfe0ff).lerp(SKY.rain,rainAmt);
   tmpC.copy(SKY.noon).lerp(hour<12?SKY.dawn:SKY.dusk,lowness).lerp(SKY.rain,rainAmt*0.9);
-  fog.color.copy(tmpC); fog.density=lerp(mode==='top'?0.0032:0.0065,mode==='top'?0.009:0.03,rainAmt)+0.004*lowness*clear;
-  skyU.uHor.value.copy(tmpC); skyU.uTop.value.set(0x2a66d0).lerp(tmpC,lowness*0.55).lerp(SKY.rain,rainAmt);
+  fog.color.copy(tmpC); fog.color.lerp(new T3.Color(0xe6eae6),0.36*clear); fog.density=lerp(mode==='top'?0.0038:0.008,mode==='top'?0.009:0.03,rainAmt)+0.008*lowness*clear;
+  skyU.uHor.value.copy(tmpC); skyU.uTop.value.set(0x7da9ce).lerp(tmpC,lowness*0.55).lerp(SKY.rain,rainAmt);
   skyU.uCloud.value=0.45+0.25*lowness; skyU.uOver.value=rainAmt; skyU.uSunDir.value.copy(sdir); skyU.uSunC.value.copy(sun.color); skyU.uGlow.value=lowness*clear;
   sky.position.copy(camera.position);
   sunGlow.position.copy(camera.position).addScaledVector(sdir,800); sunGlow.material.opacity=clear*(0.25+0.9*lowness); sunGlow.material.color.copy(sun.color);
   leafMat.roughness=lerp(0.42,0.15,rainAmt); leafMat.color.setScalar(lerp(1,0.72,rainAmt)); coreMat.color.setScalar(lerp(1,0.8,rainAmt));
   groundMesh.material.color.setScalar(lerp(1,0.62,rainAmt)); groundMesh.material.roughness=lerp(0.96,0.45,rainAmt);
-  mistMat.opacity=0.55*rainAmt+0.18*lowness*morning*clear;
+  mistMat.opacity=0.48*rainAmt+0.26*lowness*morning*clear;
+  valleyMistMat.opacity=0.05+0.33*lowness*morning*clear+0.12*rainAmt;
+  valleyMistMat.color.copy(fog.color);
   rainMat.opacity=0.6*rainAmt; rain.visible=rainAmt>0.02; uWind.value=1+rainAmt*1.4;
   renderer.toneMappingExposure=lerp(1.0,0.9,rainAmt)+0.1*lowness*clear;
 }
@@ -51400,12 +51632,17 @@ function applyTime(){
 // ---------- 字幕 ----------
 const CAPS={
   walk:()=>{const l=[];
+    if(stationClear(player.x,player.z)){
+      l.push('収穫した赤い実を、上げ床（アフリカンベッド）の上で乾かします');
+      l.push('防雨や強い日差しのために、シェードやシートをかけることもあるそうです');
+    }
     if(rainAmt>0.5)l.push(hour<12?'朝の雨と霧が、コーヒーの木をうるおすと言われています':'夕方には、山の上に雨雲がかかりやすいと言われています');
+    l.push('森の高い木の下に、背の低いコーヒーの木が育っています');
     l.push('日陰の木が、強い日差しからコーヒーを守ると言われています');
     l.push('山の斜面は涼しく、実がゆっくり育つと言われています');
     l.push('実は緑 → 黄 → 赤と色づき、赤くなったら収穫します');
     return l;},
-  top:()=>['斜面の等高線にそって、コーヒーの木を列に植えます','急な斜面では、1株ずつ植えることもあるそうです'],
+  top:()=>['乾燥場では、上げ床を並べて風が通るようにします','斜面の等高線にそって、コーヒーの木を列に植えます','急な斜面では、1株ずつ植えることもあるそうです'],
   globe:()=>['赤道のまわりの山で育つと言われています（コーヒーベルト）','北回帰線と南回帰線のあいだに、主な産地があります']};
 let capT=0,capIdx=0,lastCap='';
 function updateCap(force){const l=CAPS[mode](); if(force){capT=0;capIdx=0;} else if(capT>7){capT=0;capIdx++;} const s=l[capIdx%l.length]; if(s!==lastCap){$('cap').textContent=s;lastCap=s;}}
@@ -51416,7 +51653,7 @@ window.addEventListener('resize',resize); if(window.ResizeObserver)new ResizeObs
 
 // ---------- ループ ----------
 const fwd=new T3.Vector3(); let last=performance.now(), frames=0;
-const startView=Q.get('view')||'globe'; setMode(startView==='globe'?'globe':startView);
+const startView=Q.get('view')||'walk'; setMode(startView==='globe'?'globe':startView);
 if(Q.get('cap')) {}
 function frame(now){
   const dt=Math.min(0.05,(now-last)/1000); last=now; frames++; capT+=dt;
@@ -51430,7 +51667,9 @@ function frame(now){
     const sx=Math.sin(player.yaw), cz=Math.cos(player.yaw);
     player.x=clamp(player.x+(sx*mv- cz*st)*sp,-FX+3,FX-3); // forward = (sin,cos)
     player.z=clamp(player.z+(cz*mv+ sx*st)*sp,FZ0+3,FZ1-3);
+    resolveStationCollision(player);
     for(const c of coffeeSpots){const dx=player.x-c[0],dz=player.z-c[1];if(dx*dx+dz*dz>4)continue;const d=Math.hypot(dx,dz)||1e-3,m=1.35*c[2];if(d<m){player.x=c[0]+dx/d*m;player.z=c[1]+dz/d*m;}}
+    resolveStationCollision(player);
     const y=H(player.x,player.z)+1.62+(mv?Math.sin(now*0.012)*0.04:0);
     camera.position.set(player.x,y,player.z);
     fwd.set(Math.sin(player.yaw)*Math.cos(player.pitch),Math.sin(player.pitch),Math.cos(player.yaw)*Math.cos(player.pitch));
@@ -51455,13 +51694,13 @@ function frame(now){
   $('alt').textContent=mode==='globe'?'—':'約'+altM(H(ph.x,ph.z)).toLocaleString()+' m';
   const hh=Math.floor(hour), mm=Math.floor((hour-hh)*60/10)*10; $('clock').textContent=hh+':'+String(mm).padStart(2,'0');
   $('wx').textContent=rainAmt>0.6?'雨・霧':rainAmt>0.15?'くもり':hour<8||hour>16.5?'晴れ（弱い日差し）':'晴れ';
-  if(mode!=='walk'||$('where').textContent==='—')$('where').textContent=mode==='globe'?'地球':mode==='top'?'農園を上から':'農園の道';
+  $('where').textContent=mode==='globe'?'地球':mode==='top'?'農園を上から':stationClear(player.x,player.z)?'農園の乾燥場':'木陰の農園の道';
   updateCap(false);
   window.__frames=frames;
   if(!(Q.get('still')&&frames>=+Q.get('still')&&!diving))requestAnimationFrame(frame); else window.__done=true;
 }
 requestAnimationFrame(frame);
-window.__farm={euLeaf,euCrown,kick:()=>{window.__done=false;requestAnimationFrame(frame);},setMode,dive,player,set hour(v){hour=v;$('hour').value=v;},get rainAmt(){return rainAmt;},coffee:nC,shade:nS,cards:nCards,setGround};
+window.__farm={dryingBeds,resolveStationCollision,stationH,H,START,renderer,scene,camera,euLeaf,euCrown,kick:()=>{window.__done=false;requestAnimationFrame(frame);},setMode,dive,player,set hour(v){hour=v;$('hour').value=v;},get rainAmt(){return rainAmt;},coffee:nC,shade:nS,cards:nCards,setGround};
 })();
 </script>
 </body>
