@@ -14,10 +14,11 @@
   header h1{font-size:18px;font-weight:700;margin:0}
   header .tag{margin-left:auto;font-size:13px;color:var(--sub)}
   main{display:flex;height:calc(100% - 56px)}
-  #view{flex:1;position:relative;min-width:0;outline:none}
+  #stage{flex:1;position:relative;min-width:0;height:100%}
+  #view{position:absolute;inset:0;outline:none;min-width:0}
   #view:focus-visible{box-shadow:inset 0 0 0 3px var(--focus)}
   #view canvas{display:block;touch-action:none;user-select:none}
-  #caption{position:absolute;left:50%;top:16px;transform:translateX(-50%);background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:8px;padding:8px 20px;font-size:20px;font-weight:700;text-align:center;max-width:92%;pointer-events:none}
+  #caption{position:absolute;left:50%;top:16px;transform:translateX(-50%);background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:8px;padding:8px 20px;font-size:20px;font-weight:700;text-align:center;max-width:92%;pointer-events:none;z-index:5}
   #caption small{display:block;font-size:15px;font-weight:400;color:var(--sub)}
   .viewbar{position:absolute;left:16px;bottom:16px;display:flex;gap:8px;flex-wrap:wrap}
   #hint{position:absolute;pointer-events:none;background:var(--blue);color:#fff;font-size:13px;font-weight:700;padding:2px 10px;border-radius:12px;transform:translate(-50%,-150%);white-space:nowrap}
@@ -48,9 +49,17 @@
   #dilRow{opacity:.45}
   #dilRow.on{opacity:1}
   .note{font-size:12px;color:var(--sub);margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
-  @media (max-width:820px){main{flex-direction:column}#view{flex:none;height:55%}aside{width:100%;flex:1;border-left:0;border-top:1px solid var(--line)}}
-#swBtn{position:absolute;left:50%;top:104px;transform:translateX(-50%);z-index:6;font:inherit;font-size:22px;font-weight:800;color:#fff;background:#0017C1;border:3px solid #fff;border-radius:999px;padding:10px 28px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35)}
-#swBtn.wait{animation:swb .8s ease-in-out infinite;background:#C0392B}@keyframes swb{50%{transform:translateX(-50%) scale(1.08)}}
+#swBtn{position:absolute;left:50%;top:104px;bottom:auto;transform:translateX(-50%);z-index:6;font:inherit;font-size:22px;font-weight:800;color:#fff;background:#0017C1;border:3px solid #fff;border-radius:999px;padding:10px 28px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35);white-space:nowrap}
+#swBtn.wait{animation:swb .8s ease-in-out infinite;background:#C0392B}@keyframes swb{50%{transform:translateX(-50%) scale(1.08)}}@keyframes swbMob{50%{transform:scale(1.08)}}
+  @media (max-width:820px){main{flex-direction:column}#stage{flex:none;height:55%;width:100%}aside{width:100%;flex:1;border-left:0;border-top:1px solid var(--line)}}
+  @media (max-width:600px){
+    #stage{height:auto;flex:none;display:flex;flex-direction:column}
+    #caption{position:static;transform:none;left:auto;top:auto;width:100%;max-width:none;border-radius:0;border-left:0;border-right:0;border-top:0;padding:6px 14px;font-size:16px;line-height:1.4;background:var(--white)}
+    #caption small{font-size:13px;line-height:1.45}
+    #view{position:relative;inset:auto;height:52vh;min-height:300px;width:100%;flex:none}
+    #swBtn{position:static;transform:none;left:auto;top:auto;bottom:auto;align-self:center;margin:8px auto 0;font-size:15px;padding:8px 18px;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+    #swBtn.wait{animation:swbMob .8s ease-in-out infinite}
+  }
 </style>
 <style id="mshim">canvas{touch-action:none}html,body{-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
 @media (pointer:coarse){button,select,label{touch-action:manipulation}html.dfull button,html.dfull select{min-height:40px;min-width:40px}html.dfull input[type=range]{min-height:34px}}</style>
@@ -58,9 +67,9 @@
 <body>
 <header><span class="mark"></span><h1>浸漬式ドリッパー（スイッチ）</h1><span class="tag">お湯を入れて、ひたして、スイッチで落とす</span></header>
 <main>
+  <div id="stage">
+  <div id="caption"></div>
   <div id="view" tabindex="0" aria-label="3Dビュー（ドラッグで回転、ホイールで拡大縮小、スペースで再生／一時停止）">
-    <div id="caption"></div>
-    <button id="swBtn" hidden>スイッチを押す ▼</button>
     <div id="hint" hidden></div>
     <div class="viewbar">
       <button class="btn btn-outline btn-sm" id="vFront">全体</button>
@@ -68,11 +77,13 @@
       <button class="btn btn-outline btn-sm" id="vTop">上から見る</button>
     </div>
   </div>
+  <button id="swBtn" hidden>スイッチを押す ▼</button>
+  </div>
   <aside>
     <h2>手順</h2>
     <div class="steps" id="steps"></div>
     <div class="row" style="margin-top:10px">
-      <button class="btn btn-primary" id="play">一時停止</button>
+      <button class="btn btn-primary" id="play">再生</button>
       <button class="btn btn-outline" id="reset">最初から</button>
     </div>
     <h2>レシピ</h2>
@@ -50836,7 +50847,7 @@ const scene=new T3.Scene();
 scene.background=(()=>{const cv=document.createElement('canvas');cv.width=4;cv.height=256;const x=cv.getContext('2d');const g=x.createLinearGradient(0,0,0,256);g.addColorStop(0,'#3A4760');g.addColorStop(0.6,'#222B3B');g.addColorStop(1,'#141A24');x.fillStyle=g;x.fillRect(0,0,4,256);const t=new T3.CanvasTexture(cv);t.encoding=T3.sRGBEncoding;return t;})();
 const camera=new T3.PerspectiveCamera(32,1,0.5,600);
 const controls=new T3.OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.minDistance=14;controls.maxDistance=140;controls.maxPolarAngle=Math.PI*0.52;
-function resize(){const w=view.clientWidth,h=view.clientHeight;if(!w||!h)return;renderer.setSize(w,h);camera.aspect=w/h;camera.fov=camera.aspect<1.2?2*Math.atan(Math.tan(32*Math.PI/360)*1.2/camera.aspect)*180/Math.PI:32;camera.updateProjectionMatrix();}
+function isNarrow(){return window.innerWidth<=600;}function resize(){const w=view.clientWidth,h=view.clientHeight;if(!w||!h)return;renderer.setSize(w,h);camera.aspect=w/h;camera.fov=isNarrow()?(camera.aspect<1?2*Math.atan(Math.tan(32*Math.PI/360)/Math.max(camera.aspect,0.85))*180/Math.PI:32):(camera.aspect<1.2?2*Math.atan(Math.tan(32*Math.PI/360)*1.2/camera.aspect)*180/Math.PI:32);camera.updateProjectionMatrix();}
 addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(view);resize();
 // environment for glass / metal reflections (procedural)
 (function(){const es=new T3.Scene();const g=new T3.SphereGeometry(50,32,16);const c=[];const p=g.attributes.position;
@@ -50916,27 +50927,207 @@ const LEV=new T3.Group();LEV.position.set(5.05,1.15,0);DR.add(LEV);
 {const tab=new T3.Mesh(new T3.BoxGeometry(3.4,0.45,2.2),clearPl);tab.position.x=1.5;tab.castShadow=true;LEV.add(tab);
  const tip=new T3.Mesh(new T3.CylinderGeometry(0.45,0.45,2.2,16),clearPl);tip.rotation.x=Math.PI/2;tip.position.x=3.2;LEV.add(tip);
  const hit=new T3.Mesh(new T3.BoxGeometry(5,3,4),new T3.MeshBasicMaterial({visible:false}));hit.position.x=1.8;LEV.add(hit);LEV.userData.hit=hit;}
-const paperMat=new T3.MeshStandardMaterial({color:0xeeebe2,roughness:0.95,side:T3.DoubleSide,transparent:true,opacity:0.9,envMapIntensity:0.4});
-{const pp=[];for(let y=1.05;y<=YT+1.2;y+=0.25)pp.push([Math.max(0.05,rCone(y)-0.08),y]);const paper=lathe(pp,paperMat,64);paper.castShadow=true;paper.renderOrder=2;DR.add(paper);
-}
+const paperMat=new T3.MeshStandardMaterial({color:0xf3efe6,roughness:0.96,metalness:0,envMapIntensity:0.08,side:T3.DoubleSide});
+{const PLEAT=20,COLS=PLEAT*4,ROWS=28,amp=0.26;
+  const pos=[],nrm=[],uv=[],idx=[];
+  for(let i=0;i<=ROWS;i++){const ty=i/ROWS,y=1.05+ty*(YT+1.15-1.05),r0=Math.max(0.08,rCone(y)-0.06);
+    for(let j=0;j<=COLS;j++){const th=j/COLS,a=th*Math.PI*2,fold=1-2*Math.abs((th*PLEAT)%1-0.5);
+      const r=r0+amp*fold*(0.55+0.45*ty);
+      pos.push(Math.cos(a)*r,y,Math.sin(a)*r);nrm.push(0,0,0);uv.push(th*PLEAT*0.25,ty);}}
+  for(let i=0;i<ROWS;i++){for(let j=0;j<COLS;j++){const a=i*(COLS+1)+j,b=a+COLS+1;idx.push(a,b,a+1,a+1,b,b+1);}}
+  const g=new T3.BufferGeometry();g.setAttribute('position',new T3.Float32BufferAttribute(pos,3));g.setAttribute('uv',new T3.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();
+  const paper=new T3.Mesh(g,paperMat);paper.castShadow=true;paper.renderOrder=1;DR.add(paper);}
 // coffee bed / slurry inside the filter
-const bedMat=new T3.MeshStandardMaterial({color:0x8a5a36,roughness:0.95});
-const slurMat=new T3.MeshPhysicalMaterial({color:0x2e1a0e,roughness:0.35,clearcoat:0.6,transparent:true,opacity:0.97});
-const sideMat=new T3.MeshStandardMaterial({color:0x4a2a14,roughness:0.9,transparent:true,opacity:0.55,side:T3.DoubleSide,depthWrite:false});
+function mkTex(sz,draw,srgb){const cv=document.createElement('canvas');cv.width=cv.height=sz;draw(cv.getContext('2d'),sz);const t=new T3.CanvasTexture(cv);if(srgb!==false)t.encoding=T3.sRGBEncoding;t.anisotropy=4;t.wrapS=t.wrapT=T3.ClampToEdgeWrapping;return t;}
+function n2(x,z){const ix=Math.floor(x),iz=Math.floor(z),fx=x-ix,fz=z-iz,sx=fx*fx*(3-2*fx),sz=fz*fz*(3-2*fz);
+  const h=(i,j)=>{const n=Math.sin((i*127.1+j*311.7)*0.017)*43758.5453;return n-Math.floor(n);};
+  const a=h(ix,iz),b=h(ix+1,iz),c=h(ix,iz+1),d=h(ix+1,iz+1);return a+(b-a)*sx+(c-a)*sz+(a-b-c+d)*sx*sz;}
+function fbm(x,z){return n2(x,z)*.55+n2(x*2.07,z*2.07)*.28+n2(x*4.13,z*4.13)*.12+n2(x*8.3,z*8.3)*.05;}
+const dryTex=mkTex(512,(x,S)=>{
+  x.fillStyle='#4a2c16';x.fillRect(0,0,S,S);
+  for(let i=0;i<140;i++){const cx=Math.random()*S,cy=Math.random()*S,R=4+Math.random()*16,d=Math.random();
+    const g=x.createRadialGradient(cx,cy,0,cx,cy,R);g.addColorStop(0,d<.6?'rgba(28,16,8,.55)':'rgba(96,62,36,.45)');g.addColorStop(1,'rgba(0,0,0,0)');
+    x.fillStyle=g;x.beginPath();x.arc(cx,cy,R,0,7);x.fill();}
+  for(let i=0;i<24000;i++){const n=Math.random(),r=36+n*55|0,g=20+n*32|0,b=10+n*18|0,sz=1+Math.random()*2.4;
+    x.fillStyle='rgba('+r+','+g+','+b+','+(0.5+Math.random()*0.5)+')';x.fillRect(Math.random()*S,Math.random()*S,sz,sz*(0.5+Math.random()));}
+});
+const wetTex=mkTex(512,(x,S)=>{
+  x.fillStyle='#704c28';x.fillRect(0,0,S,S);
+  for(let i=0;i<90;i++){const cx=Math.random()*S,cy=Math.random()*S,R=8+Math.random()*32,d=Math.random();
+    const g=x.createRadialGradient(cx,cy,0,cx,cy,R);
+    g.addColorStop(0,d<.45?'rgba(32,16,8,.5)':d<.75?'rgba(90,50,26,.4)':'rgba(140,88,48,.35)');g.addColorStop(1,'rgba(0,0,0,0)');
+    x.fillStyle=g;x.beginPath();x.arc(cx,cy,R,0,7);x.fill();}
+  for(let i=0;i<16000;i++){const n=Math.random(),r=50+n*60|0,g=28+n*36|0,b=14+n*20|0;
+    x.fillStyle='rgba('+r+','+g+','+b+','+(0.35+Math.random()*0.5)+')';x.fillRect(Math.random()*S,Math.random()*S,1+Math.random()*2.2,1+Math.random()*2);}
+});
+const splashTex=mkTex(512,(x,S)=>{
+  x.fillStyle='#d09048';x.fillRect(0,0,S,S);
+  for(let i=0;i<90;i++){const cx=Math.random()*S,cy=Math.random()*S,R=3+Math.random()*10,d=Math.random();
+    const g=x.createRadialGradient(cx,cy,0,cx,cy,R);
+    g.addColorStop(0,d<.55?'rgba(232,176,96,.55)':'rgba(96,52,22,.5)');g.addColorStop(1,'rgba(0,0,0,0)');
+    x.fillStyle=g;x.beginPath();x.arc(cx,cy,R,0,7);x.fill();}
+  for(let i=0;i<28000;i++){const n=Math.random(),r=128+n*100|0,g=80+n*70|0,b=34+n*36|0,sz=0.7+Math.random()*1.6;
+    x.fillStyle='rgba('+r+','+g+','+b+','+(0.4+Math.random()*0.5)+')';x.fillRect(Math.random()*S,Math.random()*S,sz,sz*(0.4+Math.random()));}
+  for(let i=0;i<220;i++){x.fillStyle='rgba(70,38,16,'+(0.18+Math.random()*0.28)+')';
+    x.fillRect(Math.random()*S,Math.random()*S,1+Math.random()*2,1+Math.random()*2);}
+});
+const foamTex=mkTex(512,(x,S)=>{
+  x.fillStyle='#96683c';x.fillRect(0,0,S,S);
+  for(let i=0;i<18;i++){const cx=Math.random()*S,cy=Math.random()*S,R=12+Math.random()*36,d=Math.random();
+    const g=x.createRadialGradient(cx,cy,0,cx,cy,R);
+    g.addColorStop(0,d<.45?'rgba(180,130,80,.28)':'rgba(70,40,22,.48)');g.addColorStop(1,'rgba(0,0,0,0)');
+    x.fillStyle=g;x.beginPath();x.arc(cx,cy,R,0,7);x.fill();}
+  for(let i=0;i<28;i++){const cx=Math.random()*S,cy=Math.random()*S,R=18+Math.random()*50;
+    const g=x.createRadialGradient(cx,cy,0,cx,cy,R);
+    g.addColorStop(0,'rgba(52,28,14,.46)');g.addColorStop(1,'rgba(0,0,0,0)');
+    x.fillStyle=g;x.beginPath();x.arc(cx,cy,R,0,7);x.fill();}
+  for(let i=0;i<160;i++){const cx=Math.random()*S,cy=Math.random()*S,R=1.2+Math.random()*3.2;
+    x.fillStyle='rgba(28,14,8,'+(0.55+Math.random()*0.4)+')';x.beginPath();x.arc(cx,cy,R,0,7);x.fill();}
+  for(let i=0;i<1600;i++){const cx=Math.random()*S,cy=Math.random()*S,R=0.7+Math.random()*2.0;
+    x.fillStyle='rgba(40,22,12,'+(0.45+Math.random()*0.45)+')';x.beginPath();x.arc(cx,cy,R,0,7);x.fill();}
+  for(let i=0;i<16000;i++){const n=Math.random(),r=140+n*55|0,g=95+n*45|0,b=55+n*30|0,sz=0.7+Math.random()*1.4;
+    x.fillStyle='rgba('+r+','+g+','+b+','+(0.2+Math.random()*0.35)+')';x.fillRect(Math.random()*S,Math.random()*S,sz,sz);}
+  const lg=x.createRadialGradient(S/2,S/2,0,S/2,S/2,S*0.28);
+  lg.addColorStop(0,'rgba(200,150,95,.22)');lg.addColorStop(0.45,'rgba(160,110,70,.08)');lg.addColorStop(1,'rgba(0,0,0,0)');
+  x.fillStyle=lg;x.fillRect(0,0,S,S);
+  const vg=x.createRadialGradient(S/2,S/2,S*0.2,S/2,S/2,S*0.5);
+  vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(0.5,'rgba(42,22,10,.4)');vg.addColorStop(1,'rgba(20,10,6,.9)');
+  x.fillStyle=vg;x.fillRect(0,0,S,S);
+});
+const bedMat=new T3.MeshStandardMaterial({map:dryTex,roughness:0.92,metalness:0,vertexColors:true,envMapIntensity:0.42});
+bedMat.onBeforeCompile=shader=>{
+  shader.uniforms.uWetMap={value:wetTex};shader.uniforms.uFoamMap={value:foamTex};shader.uniforms.uSplashMap={value:splashTex};shader.uniforms.uPitMap={value:pitTex};shader.uniforms.uPitAmt=uPitAmt;
+  shader.fragmentShader=shader.fragmentShader
+    .replace('#include <common>','#include <common>\nuniform sampler2D uWetMap;uniform sampler2D uFoamMap;uniform sampler2D uSplashMap;uniform sampler2D uPitMap;uniform float uPitAmt;')
+    .replace('#include <color_fragment>','')
+    .replace('#include <map_fragment>',[
+      '#ifdef USE_MAP',
+      'vec4 dryC=mapTexelToLinear(texture2D(map,vUv));',
+      'vec4 wetC=mapTexelToLinear(texture2D(uWetMap,vUv));',
+      'vec4 foamC=mapTexelToLinear(texture2D(uFoamMap,vUv));',
+      'vec4 splashC=mapTexelToLinear(texture2D(uSplashMap,vUv));',
+      'float wet=clamp(vColor.r,0.0,1.0);float foam=clamp(vColor.g,0.0,1.0);float splash=clamp(vColor.b,0.0,1.0);',
+      'vec4 sampledDiffuseColor=mix(dryC,wetC,wet);',
+      'sampledDiffuseColor=mix(sampledDiffuseColor,splashC,splash);',
+      'sampledDiffuseColor=mix(sampledDiffuseColor,foamC,foam);',
+      'sampledDiffuseColor.rgb*=mix(vec3(1.0),texture2D(uPitMap,vUv).rgb,uPitAmt);',
+      'diffuseColor*=sampledDiffuseColor;',
+      '#endif'
+    ].join('\n'))
+    .replace('float roughnessFactor = roughness;','float roughnessFactor=mix(0.96,mix(mix(0.13,0.12,splash),0.22,foam),max(wet,splash));')
+    .replace('gl_FragColor = vec4( outgoingLight, diffuseColor.a );','vec3 viewDirF=normalize(vViewPosition);vec3 HF=normalize(viewDirF+normalize(vec3(0.25,0.9,0.35)));float specF=pow(max(dot(normalize(normal),HF),0.0),200.0);outgoingLight+=vec3(1.0,0.95,0.85)*specF*(0.12*foam+0.22*splash);gl_FragColor=vec4(outgoingLight,diffuseColor.a);');
+};
+const sideMat=new T3.MeshStandardMaterial({color:0x4a2a14,roughness:0.9,transparent:true,opacity:0.62,side:T3.DoubleSide,depthWrite:false});
 const bedSide=new T3.Mesh(new T3.BufferGeometry(),sideMat);bedSide.renderOrder=1;DR.add(bedSide);
-const crustTex=(()=>{const cv=document.createElement('canvas');cv.width=cv.height=256;const x=cv.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,256,256);
-  for(let i=0;i<900;i++){const v=150+Math.random()*105|0;x.fillStyle='rgba('+v+','+v+','+v+',.6)';x.beginPath();x.arc(Math.random()*256,Math.random()*256,1+Math.random()*5,0,7);x.fill();}const t=new T3.CanvasTexture(cv);return t;})();
-bedMat.map=crustTex;slurMat.map=crustTex;
-const bedTop=new T3.Mesh(new T3.CircleGeometry(1,64),bedMat);bedTop.rotation.x=-Math.PI/2;bedTop.renderOrder=2;DR.add(bedTop);
+function makeDisc(rings,seg){
+  const pos=[0,0,0],nrm=[0,1,0],uv=[.5,.5],col=[0,0,0],idx=[];
+  for(let r=1;r<=rings;r++){const rr=r/rings;for(let s=0;s<seg;s++){const a=s/seg*Math.PI*2;pos.push(Math.cos(a)*rr,0,Math.sin(a)*rr);nrm.push(0,1,0);uv.push(.5+.5*Math.cos(a)*rr,.5+.5*Math.sin(a)*rr);col.push(0,0,0);}}
+  for(let s=0;s<seg;s++){const a=1+s,b=1+(s+1)%seg;idx.push(0,b,a);}
+  for(let r=1;r<rings;r++){const a0=1+(r-1)*seg,b0=1+r*seg;for(let s=0;s<seg;s++){const s2=(s+1)%seg;idx.push(a0+s,b0+s2,b0+s,a0+s,a0+s2,b0+s2);}}
+  const g=new T3.BufferGeometry();g.setAttribute('position',new T3.Float32BufferAttribute(pos,3));g.setAttribute('normal',new T3.Float32BufferAttribute(nrm,3));g.setAttribute('uv',new T3.Float32BufferAttribute(uv,2));g.setAttribute('color',new T3.Float32BufferAttribute(col,3));g.setIndex(idx);
+  g.userData.base=new Float32Array(pos);return g;
+}
+const bedGeo=makeDisc(isNarrow()?28:36,isNarrow()?56:72);
+const bedTop=new T3.Mesh(bedGeo,bedMat);bedTop.renderOrder=2;bedTop.receiveShadow=true;DR.add(bedTop);
 const VK=Math.PI*KC*KC/3, yApex=YA-R0/KC;
 const volToY=v=>yApex+Math.cbrt(Math.max(0,v)/VK+Math.pow(YA-yApex,3));
-let lastBed='';
-function setBed(y,mat){const k=y.toFixed(2)+mat.uuid;bedTop.material=mat;bedTop.position.y=y;bedTop.scale.setScalar(rCone(y)-0.1);if(k===lastBed)return;lastBed=k;
+let lastBed='', lastYSl=7, lastDomeH=0, lastBubbles=[];
+function setBed(y){const R=Math.max(0.2,rCone(y)-0.1);bedTop.position.y=y;bedTop.scale.set(R,1,R);
+  const k=y.toFixed(2);if(k===lastBed)return;lastBed=k;
   const pts=[];for(let i=0;i<=16;i++){const yy=YA+0.15+(y-YA-0.15)*i/16;pts.push(new T3.Vector2(rCone(yy)-0.12,yy));}bedSide.geometry.dispose();bedSide.geometry=new T3.LatheGeometry(pts,48);}
-// bubbles on the crust
-const bubG=new T3.SphereGeometry(1,8,6),bubM=new T3.MeshPhysicalMaterial({color:0xd8b48a,roughness:0.2,clearcoat:1,transparent:true,opacity:0.85});
-const BUB=new T3.InstancedMesh(bubG,bubM,90);BUB.renderOrder=3;DR.add(BUB);const BP=[];for(let i=0;i<90;i++)BP.push({a:Math.random()*6.28,r:Math.sqrt(Math.random()),ph:Math.random(),s:0.08+Math.random()*0.16});
+function srand(s){let x=s|0||1;return()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return (x>>>0)/4294967296;};}
+const rngB=srand(7741);
+const bedPos=bedGeo.attributes.position, bedBase=bedGeo.userData.base, bedCol=bedGeo.attributes.color, NV=bedPos.count;
+const grain=new Float32Array(NV),clump=new Float32Array(NV),crack=new Float32Array(NV),patch=new Float32Array(NV),bloom=new Float32Array(NV);
+const PITS=[];
+(function(){
+  const cracks=[];
+  for(let k=0;k<16;k++){const a=rngB()*6.28,r0=0.1+rngB()*0.62,len=0.2+rngB()*0.32,dir=a+(rngB()-.5)*0.9;
+    const pts=[];for(let tt=0;tt<=6;tt++){const u=tt/6,rr=r0+Math.cos(dir)*len*u+(rngB()-.5)*0.035,aa=a+Math.sin(dir)*0.18*u+(rngB()-.5)*0.14;
+      pts.push([Math.cos(aa)*rr,Math.sin(aa)*rr]);}cracks.push(pts);}
+  for(let k=0;k<200;k++){const a=rngB()*6.28,r=Math.sqrt(rngB())*0.86;
+    PITS.push({x:Math.cos(a)*r,z:Math.sin(a)*r,rad:0.016+rngB()*0.020,d:0.10+rngB()*0.09});}
+  for(let i=0;i<NV;i++){const x=bedBase[i*3],z=bedBase[i*3+2],rr=Math.hypot(x,z);
+    grain[i]=(fbm(x*42,z*42)-0.5)*2;
+    clump[i]=(fbm(x*14+9,z*14-3)-0.45);
+    patch[i]=Math.max(0,fbm(x*6.5+2,z*6.5+4)-0.28)*1.5;
+    bloom[i]=ss(0.48,0.78,fbm(x*2.5+1,z*2.5-2));
+    let c=0;for(let k=0;k<cracks.length;k++){const pts=cracks[k];for(let p=0;p<pts.length-1;p++){
+      const ax=pts[p][0],az=pts[p][1],bx=pts[p+1][0],bz=pts[p+1][1],dx=bx-ax,dz=bz-az,l2=dx*dx+dz*dz||1e-6,u=Math.max(0,Math.min(1,((x-ax)*dx+(z-az)*dz)/l2));
+      const px=ax+dx*u,pz=az+dz*u,d=Math.hypot(x-px,z-pz);if(d<0.06)c=Math.min(c,-(0.06-d)/0.06*0.16);}}
+    crack[i]=c;}
+})();
+const uPitAmt={value:0};
+const pitTex=mkTex(512,(x,S)=>{
+  x.fillStyle='#ffffff';x.fillRect(0,0,S,S);
+  for(let k=0;k<PITS.length;k++){
+    if(k%2===1)continue;
+    const p=PITS[k],cx=(p.x*0.5+0.5)*S,cy=(p.z*0.5+0.5)*S,rad=Math.max(1.1,p.rad*0.38*S);
+    const g=x.createRadialGradient(cx-rad*0.2,cy-rad*0.25,0,cx,cy,rad);
+    g.addColorStop(0,'#2a1610');g.addColorStop(0.55,'#4a2a18');g.addColorStop(1,'rgba(80,50,30,0)');
+    x.fillStyle=g;x.beginPath();x.ellipse(cx,cy,rad,rad*(0.75+0.4*(k%5)/5),k*0.7,0,7);x.fill();
+  }
+},false);
+function wetAt(bx,bz,vNow){if(vNow<=0)return 0;let w=0;
+  const path=(vv)=>{const ph=Math.min(vv,36)/36,radP=0.82*Math.sin(Math.PI*((ph*1.5)%1)),ang=vv*2.6;return [Math.cos(ang)*radP,Math.sin(ang)*radP];};
+  const [cx,cz]=path(Math.min(vNow,36));
+  const sig=0.27*(0.72+0.56*(fbm(bx*16+3,bz*16-1)-0.5)*2);
+  w=Math.exp(-((bx-cx)*(bx-cx)+(bz-cz)*(bz-cz))/(2*sig*sig));
+  const trail=0.35,v0=Math.max(0,Math.min(vNow,36)-trail),steps=Math.min(8,Math.max(4,trail*12|0));
+  for(let i=0;i<=steps;i++){const vv=v0+(Math.min(vNow,36)-v0)*i/steps;const [px,pz]=path(vv);
+    const age=(Math.min(vNow,36)-vv)/Math.max(trail,0.001);
+    const s2=0.16*(0.75+0.5*(fbm(bx*14-i,bz*14+i)-0.5)*2);
+    const inf=Math.exp(-((bx-px)*(bx-px)+(bz-pz)*(bz-pz))/(2*s2*s2))*(1-0.55*age)*0.7;if(inf>w)w=inf;}
+  w=ss(0.18,0.58,w);
+  return Math.min(1,w+ss(7.5,14,vNow)*0.92);}
+const N_BIG=8;
+const LB=[];
+{const cl=[
+    {a0:0.95,sp:0.14,r0:0.34},
+    {a0:2.15,sp:0.13,r0:0.40},
+    {a0:3.85,sp:0.18,r0:0.52},
+    {a0:5.15,sp:0.16,r0:0.28},
+    {a0:0.20,sp:0.16,r0:0.62}
+  ];
+  const starts=[7.2,8.0,8.8,10.0,10.6,11.2,12.0,12.8];
+  const ci=[0,0,0,1,1,2,3,4];
+  for(let i=0;i<N_BIG;i++){const c=cl[ci[i]],swell=6.8+rngB()*0.5;
+    LB.push({a:c.a0+(rngB()-.5)*c.sp,r:Math.max(0.16,Math.min(0.78,c.r0+(rngB()-.5)*0.10)),s:0.62+rngB()*0.20,start:starts[i],pop:starts[i]+swell,end:starts[i]+swell+7+rngB()*2});}}
+const bigM=new T3.MeshStandardMaterial({color:0x140a08,roughness:0.48,metalness:0,envMapIntensity:0,transparent:false});
+bigM.onBeforeCompile=shader=>{
+  shader.fragmentShader=shader.fragmentShader.replace(
+    'gl_FragColor = vec4( outgoingLight, diffuseColor.a );',
+    'outgoingLight*=0.55;vec3 viewDirB=normalize(vViewPosition);float ndvB=max(dot(normalize(normal),viewDirB),0.0);float rimB=pow(1.0-ndvB,8.0);outgoingLight+=vec3(0.62,0.42,0.28)*rimB*0.40;vec3 HB=normalize(viewDirB+normalize(vec3(0.28,0.9,0.32)));float specB=pow(max(dot(normalize(normal),HB),0.0),320.0);outgoingLight+=vec3(1.0,0.96,0.90)*specB*1.35;gl_FragColor=vec4(outgoingLight,diffuseColor.a);'
+  );
+};
+const BIG=new T3.InstancedMesh(new T3.SphereGeometry(1,24,12,0,Math.PI*2,0,Math.PI/2),bigM,N_BIG);BIG.renderOrder=5;BIG.frustumCulled=false;DR.add(BIG);
+const specM=new T3.MeshBasicMaterial({color:0xffffff});
+const SPEC=new T3.InstancedMesh(new T3.SphereGeometry(1,12,8),specM,N_BIG);SPEC.renderOrder=6;SPEC.frustumCulled=false;DR.add(SPEC);
 const dmy=new T3.Object3D();
+function shapeBed(domeH, impact, craters, vNow, foamK){
+  const pitAmt=ss(9,13,vNow)*(1-0.3*ss(26,40,vNow));uPitAmt.value=ss(11.5,16,vNow)*(1-0.35*ss(26,40,vNow));
+  const lateLift=0.12*ss(22,30,vNow)*(1-ss(70,120,vNow));
+  const men=0.2*ss(3,10,vNow);
+  for(let i=0;i<NV;i++){const bx=bedBase[i*3],bz=bedBase[i*3+2],rr=Math.hypot(bx,bz);
+    let y=domeH*Math.pow(Math.max(0,1-rr*rr),1.7);
+    y+=lateLift*Math.pow(Math.max(0,1-rr*rr),1.8);
+    if(rr>0.78){const tt=Math.min(1,(rr-0.78)/0.22);y-=men*tt*tt;}
+    if(rr>0.9){y+=0.07*ss(4,12,vNow)*((rr-0.9)/0.1);}
+    y+=grain[i]*0.045+clump[i]*0.05+crack[i]*0.7;
+    let pitW=0;
+    if(pitAmt>0.02){for(let k=0;k<PITS.length;k++){const p=PITS[k];const dx=bx-p.x,dz=bz-p.z,d=Math.hypot(dx,dz),sig=p.rad;if(d<sig*1.2){const infl=Math.pow(Math.max(0,1-d/sig),2.4)*pitAmt;y-=p.d*1.15*infl;if(infl>pitW)pitW=infl;}}}
+    let craterW=0;
+    if(impact&&impact.d>0){const dx=bx-impact.x,dz=bz-impact.z,d2=dx*dx+dz*dz,sig=impact.rad;if(d2<sig*sig*9){const e=Math.exp(-d2/(2*sig*sig));y+=impact.d*(-e+0.28*e*d2/(sig*sig));}}
+    for(let k=0;k<craters.length;k++){const c=craters[k];const dx=bx-c.x,dz=bz-c.z,d2=dx*dx+dz*dz,sig=c.rad;if(d2<sig*sig*10){const e=Math.exp(-d2/(2*sig*sig));y+=c.d*(-1.15*e+0.4*e*d2/(sig*sig));if(e>craterW)craterW=e;}}
+    bedPos.setY(i,y);
+    const wet=vNow<0.15?0:wetAt(bx,bz,vNow);
+    const splash=ss(1.2,5,vNow)*(1-ss(6.5,11,vNow))*ss(0.45,0.88,wet)*0.82*(0.70+0.55*fbm(bx*22+5,bz*22-3));
+    let foam=0;if(wet>0.12){const mid=ss(8,13,vNow)*(1-ss(13,17,vNow))*ss(0.15,0.9,wet)*(0.08+0.55*bloom[i]);const late=ss(18,28,vNow)*ss(0.15,0.9,wet)*(0.55+0.35*patch[i])*(0.62+0.20*Math.pow(Math.max(0,1-rr*rr),1.2))*foamK;foam=Math.min(0.78,mid+late);if(vNow>16&&rr>0.68)foam*=Math.max(0,1-(rr-0.68)/0.32*1.05);}
+    foam*=1-0.45*Math.max(pitW,craterW);
+    if(vNow>=137.6)foam*=1-ss(137.6,165,vNow);
+    bedCol.setXYZ(i,wet,foam,splash);}
+  bedPos.needsUpdate=true;bedCol.needsUpdate=true;bedGeo.computeVertexNormals();
+}
 
 // ================= gooseneck kettle (matte sage green) and dosing cup
 const KET=new T3.Group();scene.add(KET);
@@ -50962,15 +51153,15 @@ const GR=new T3.InstancedMesh(new T3.IcosahedronGeometry(0.12,0),new T3.MeshStan
 const WATER=440;let G=60,ADD=0;
 const STEPS=[
  {k:'dose',n:'① 粉を入れる',a:-14,b:0,cap:['① スイッチを上げて、粉を入れる','スイッチを上げると、下の穴がふさがります（閉じた状態）']},
- {k:'pour',n:'② お湯を注ぐ',a:0,b:36,cap:['② お湯を注ぐ（440 ml）','真ん中から外へ、また真ん中へ、ゆっくり円を描くように注ぎます。閉じているので下に落ちません']},
+ {k:'pour',n:'② お湯を注ぐ',a:0,b:36,cap:['② お湯を注ぐ（440 ml）','ゆっくり円を描くように注ぎます。粉に残ったガスが泡になって出てきます。閉じているので下には落ちません']},
  {k:'steep',n:'③ ひたして待つ',a:36,b:137,cap:['③ ひたして待つ','お湯はふちのギリギリまで。2:17 くらいになったら、じぶんでスイッチを押します']},
  {k:'press',n:'④ スイッチ',a:137,b:146,cap:['④ スイッチを押した！','スイッチを押すと穴が開き、氷の上にコーヒーが落ちていきます']},
  {k:'drain',n:'⑤ 落ちきる',a:146,b:212,cap:['⑤ 落ちきる','粉は平らに残ります。時間は目安です']},
  {k:'dilute',n:'⑥ お湯を足す',a:212,b:230,cap:['⑥ あとからお湯を足して、好みの濃さに','右の「足す量」を動かすと、濃さがうすくなっていきます']}];
 // real seconds per segment (time-lapse)
-const RATE={dose:3.2,pour:4,steep:18,press:3,drain:7,dilute:4};
+const RATE={dose:3.2,pour:7,steep:18,press:3,drain:7,dilute:4};
 let userPressed=false;
-let v=-14,playing=true,switchOpen=false,manualOpen=false,dilT=0,ADDs=0;
+let v=-14,playing=false,switchOpen=false,manualOpen=false,dilT=0,ADDs=0;
 const retained=()=>2.0*G;                 // water held by the spent grounds (rough)
 const outTotal=()=>WATER-retained();
 const strength=()=>{const base=(G/WATER)/(60/WATER);const out=outTotal()*clamp(outFrac(),0,1);return base*(out>0?out/(out+ADDs*dilK()):1);};
@@ -50980,16 +51171,21 @@ function stepOf(x){for(let i=STEPS.length-1;i>=0;i--)if(x>=STEPS[i].a)return i;r
 
 // ================= UI
 const stEl=$('steps');STEPS.forEach((s,i)=>{const b=document.createElement('button');b.className='st';b.textContent=s.n;b.onclick=()=>jump(i);stEl.appendChild(b);s.btn=b;});
-function jump(i){v=STEPS[i].a+(i===5?0.5:0);if(i===0)ADD=0;if(i<5){ADD=0;$('dil').value=0;}playing=true;$('play').textContent='一時停止';sync();}
+function jump(i){v=STEPS[i].a+(i===5?0.5:0);if(i===0)ADD=0;if(i<5){ADD=0;$('dil').value=0;}playing=true;$('play').textContent='一時停止';if(i===1)go('pour');sync();}
 $('play').onclick=()=>{playing=!playing;$('play').textContent=playing?'一時停止':'再生';};
 $('reset').onclick=()=>{jump(0);};
 $('gr').oninput=e=>{G=+e.target.value;sync();};
 $('dil').oninput=e=>{ADD=+e.target.value;if(v<212){v=212.5;}sync();};
 view.addEventListener('keydown',e=>{if(e.key===' '){$('play').click();e.preventDefault();}});
-const VIEWS={front:[[36,54,78],[0,19,0]],sw:[[26,24,30],[5,17,0]],top:[[3,82,20],[0,22,0]]};
-let fly=null;function go(k){fly={t:0,p0:camera.position.clone(),t0:controls.target.clone(),p1:new T3.Vector3(...VIEWS[k][0]),t1:new T3.Vector3(...VIEWS[k][1])};}
+const VIEWS_DESK={front:[[36,54,78],[0,19,0]],sw:[[26,24,30],[5,17,0]]};
+const VIEWS_MOB={front:[[28,46,62],[0,16,0]],sw:[[34,34,50],[2,17,0]]};
+function VIEWS(){const yb=DY0+lastYSl;
+  const top=isNarrow()?[[5,yb+20,15],[0,yb-0.05,0]]:[[6,yb+22,16],[0,yb-0.05,0]];
+  const pour=isNarrow()?[[5.5,yb+17.8,19.5],[0,yb+0.25,0]]:[[4.2,yb+12.4,13.2],[0,yb+0.35,0]];
+  return Object.assign({},isNarrow()?VIEWS_MOB:VIEWS_DESK,{top,pour});}
+let fly=null;function go(k){const V=VIEWS()[k];if(!V)return;fly={t:0,p0:camera.position.clone(),t0:controls.target.clone(),p1:new T3.Vector3(...V[0]),t1:new T3.Vector3(...V[1])};}
 $('vFront').onclick=()=>go('front');$('vSwitch').onclick=()=>go('sw');$('vTop').onclick=()=>go('top');
-camera.position.set(...VIEWS.front[0]);controls.target.set(...VIEWS.front[1]);
+{const V=VIEWS().front;camera.position.set(...V[0]);controls.target.set(...V[1]);}
 function pressSwitch(){userPressed=true;v=137;playing=true;$('play').textContent='一時停止';}
 $('swBtn').onclick=()=>{if(v>=36&&v<137)pressSwitch();};
 // clicking the lever presses the switch
@@ -51021,29 +51217,52 @@ function update(dt){
   const gVol=1.45*G*dose;                            // dry grounds volume (ml, rough)
   const wetBed=1.75*G;                               // spent bed volume after drawdown
   const inDr=poured+gVol*(poured>0?0.45:1)-out;      // slurry volume in the dripper
-  const VIS=1.39;   // v10: お湯は ふちギリギリまで
+  const VIS=1.18;   // bed sits inside the filter; paper visible above
   const ySl=volToY(VIS*Math.max(v<0?gVol:wetBed*(switchOpen?1:0.0),inDr));
   // dripper visual
   const dripAway=ss(212.2,214.5,v)*(ADD>0||v>212.4?1:0);
   DR.position.set(dripAway*18,DY0+Math.sin(dripAway*Math.PI)*6,dripAway*-6);
-  if(v<0.2){setBed(volToY(VIS*gVol),bedMat);bedTop.visible=dose>0.01;bedSide.visible=dose>0.01;bedMat.color.setHex(0x8a5a36);}
-  else{bedTop.visible=bedSide.visible=true;const wet=switchOpen&&outF>0.97;setBed(ySl,wet?bedMat:slurMat);if(wet)bedMat.color.setHex(0x3a2210);
-    slurMat.color.copy(new T3.Color(0x3a2010).lerp(new T3.Color(0x2a160a),ss(0,36,v)));}
+  lastYSl=ySl;
+  const spent=switchOpen&&outF>0.97;
+  const bloomK=spent?0:ss(0.8,8,v)*(1-0.35*ss(24,42,v))*(1-0.7*ss(42,110,v));
+  const foamK=spent?0:(ss(4,14,v)*0.45+ss(14,28,v)*0.55)*(1-ss(137.6,165,v));
+  const domeH=spent?0.04:bloomK*1.05*(1-0.4*ss(36,70,v))+0.12*ss(28,40,v)*(1-ss(70,120,v)); lastDomeH=domeH;
+  const showBed=dose>0.01||v>=0;
+  bedTop.visible=bedSide.visible=showBed;
+  if(v<0.2)setBed(volToY(VIS*gVol));else setBed(ySl);
+  const Rbed=Math.max(0.2,rCone(ySl)-0.1);
+  const craters=[];
+  for(let k=0;k<N_BIG;k++){const b=LB[k];
+    const swell=v>=b.start&&v<b.pop?ss(b.start,b.pop,v):0;
+    const live=swell>0.02&&!spent&&v<30;
+    const craterF=(!spent&&v>=b.pop&&v<b.end)?(1-ss(b.pop,b.end,v)):0;
+    const px=Math.cos(b.a)*b.r,pz=Math.sin(b.a)*b.r;
+    const yS=ySl+domeH*Math.pow(Math.max(0,1-b.r*b.r),1.7)+0.12*ss(22,30,v)*(1-ss(70,120,v))*Math.pow(Math.max(0,1-b.r*b.r),1.8);
+    if(live){const s=b.s*Math.pow(swell,0.72);dmy.position.set(px*Rbed,yS+s*0.22,pz*Rbed);dmy.rotation.set(0,0,0);dmy.scale.set(s,s*0.70,s);dmy.updateMatrix();BIG.setMatrixAt(k,dmy.matrix);
+      dmy.position.set(px*Rbed+s*0.22,yS+s*0.22+s*0.45,pz*Rbed+s*0.18);dmy.scale.setScalar(s*0.07);dmy.updateMatrix();SPEC.setMatrixAt(k,dmy.matrix);}
+    else{dmy.position.set(0,-4,0);dmy.scale.setScalar(0.0001);dmy.updateMatrix();BIG.setMatrixAt(k,dmy.matrix);SPEC.setMatrixAt(k,dmy.matrix);}
+    if(craterF>0.04)craters.push({x:px,z:pz,rad:(b.s*0.95)/Math.max(Rbed,0.5),d:0.36*craterF});}
+  BIG.instanceMatrix.needsUpdate=true;SPEC.instanceMatrix.needsUpdate=true;BIG.visible=SPEC.visible=!spent&&v>=7&&v<32;
+  lastBubbles=LB.map(b=>{
+    const swell=v>=b.start&&v<b.pop?ss(b.start,b.pop,v):0;
+    const live=swell>0.02&&!spent&&v<30;
+    const craterF=(!spent&&v>=b.pop&&v<b.end)?(1-ss(b.pop,b.end,v)):0;
+    return {start:b.start,pop:b.pop,end:b.end,swell:+swell.toFixed(3),live,crater:+craterF.toFixed(3),s:+b.s.toFixed(3)};
+  });
+  let impact=null;
+  if(v>=0&&v<36&&!spent){const ph=v/36;const radP=0.82*Math.sin(Math.PI*((ph*1.5)%1));const ang=v*2.6;
+    impact={x:Math.cos(ang)*radP,z:Math.sin(ang)*radP,rad:0.18,d:(0.14+0.08*Math.sin(v*14))*(0.75+0.4*foamK)};}
+  shapeBed(domeH,impact,craters,v,foamK);
   if(v<137)userPressed=userPressed&&v>=136.9;
   $('swBtn').hidden=!(v>=36&&v<137);$('swBtn').classList.toggle('wait',v>=136.9);
   // lever (up = closed, flat = open)
   const lv=ss(137,137.6,v);LEV.rotation.z=0.42*(1-lv);
-  // bubbles on the crust while pouring / steeping
-  const bubOn=v>2&&!(switchOpen&&outF>0.8);
-  for(let k=0;k<90;k++){const b=BP[k];b.ph+=dt*(0.3+0.4*b.s);const life=(b.ph%1);const rr=b.r*(rCone(ySl)-0.6);
-    dmy.position.set(Math.cos(b.a)*rr,ySl+0.05,Math.sin(b.a)*rr);dmy.scale.setScalar(bubOn&&v<137?b.s*Math.sin(Math.PI*life)*(v<36?1.4:0.7):0.0001);dmy.updateMatrix();BUB.setMatrixAt(k,dmy.matrix);}
-  BUB.instanceMatrix.needsUpdate=true;
   // grounds falling from the cup
   CUP.visible=v<0;const cupT=ss(-14,-11,v)*(1-ss(-2,-0.5,v));CUP.position.set(3.5,DY0+YT+6-2*cupT,0);CUP.rotation.z=1.25*ss(-12,-9,v)*(1-ss(-2,-0.5,v));
   for(let k=0;k<160;k++){const g=GP[k];const fall=v>-11.5&&v<-2;const t=(g.ph+v*0.9)%1;const y=lerp(YT+5,volToY(gVol)+0.1,t);dmy.position.set(1.6+g.x-1.6*t,y,g.z);dmy.scale.setScalar(fall?1:0.0001);dmy.updateMatrix();GR.setMatrixAt(k,dmy.matrix);}GR.instanceMatrix.needsUpdate=true;
   // kettle: low over the dripper, concentric circles centre → edge → centre
   let target=null;
-  if(v>=0&&v<36){const ph=v/36;const rad=(rCone(ySl)-1.2)*Math.sin(Math.PI*((ph*3)%1));const ang=v*2.6;target=new T3.Vector3(DR.position.x+Math.cos(ang)*rad,DR.position.y+ySl,Math.sin(ang)*rad);}
+  if(v>=0&&v<36){const ph=v/36;const rad=(rCone(ySl)-1.2)*Math.sin(Math.PI*((ph*1.5)%1));const ang=v*2.6;target=new T3.Vector3(DR.position.x+Math.cos(ang)*rad,DR.position.y+ySl,Math.sin(ang)*rad);}
   else if(v>=213.8&&ADDs<ADD-0.5){target=new T3.Vector3(0.6,CAR.position.y+lastLevel,0.3);}
   if(v>=214.6&&ADDs<ADD)ADDs=Math.min(ADD,ADDs+dt*45);if(ADDs>ADD)ADDs=ADD;if(v<212)ADDs=0;
   const kHold=new T3.Vector3(-22,0.2,-6);
@@ -51071,7 +51290,7 @@ const ICE_DISP=55;   // ice cubes below the surface (ml displaced, rough)
 const clock=new T3.Clock();
 function frame(dt){if(fly){fly.t=Math.min(1,fly.t+dt/1.0);const k=ss(0,1,fly.t);camera.position.lerpVectors(fly.p0,fly.p1,k);controls.target.lerpVectors(fly.t0,fly.t1,k);if(fly.t>=1)fly=null;}
   update(dt);controls.update();renderer.render(scene,camera);}
-window.__imm={setAddNow:a=>{ADD=a;ADDs=a;$('dil').value=a;sync();},setV:x=>{v=x;playing=false;},setG:g=>{G=g;$('gr').value=g;sync();},setAdd:a=>{ADD=a;$('dil').value=a;sync();},view:go,
+window.__imm={setAddNow:a=>{ADD=a;ADDs=a;$('dil').value=a;sync();},setV:x=>{v=x;playing=false;},setG:g=>{G=g;$('gr').value=g;sync();},setAdd:a=>{ADD=a;$('dil').value=a;sync();},view:go,get ySl(){return lastYSl;},get domeH(){return lastDomeH;},get bubbles(){return lastBubbles;},
   sim:(sec)=>{const n=Math.max(1,Math.round(sec/0.05));for(let k=0;k<n;k++)update(0.05);if(fly){fly.t=1;camera.position.copy(fly.p1);controls.target.copy(fly.t1);fly=null;}controls.update();renderer.render(scene,camera);},pause:()=>{playing=false;},get v(){return v;}};
 sync();
 renderer.setAnimationLoop(()=>frame(Math.min(clock.getDelta(),0.05)));
